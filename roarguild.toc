@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: RoarGuild
-## Notes: ...
+## Notes: ROARRunlimited + GodBod combined
 ## Author: babunigaming
-## Version: 1.1
-## SavedVariablesPerCharacter: ROGUDB, WorkThatGodBodDB
+## Version: 1.0
+## SavedVariables: ROEDDB, WorkThatGodBodDB
 
-roarguild.lua
+RoarGuild.lua
