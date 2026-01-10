@@ -137,8 +137,32 @@ SlashCmdList["ROGU"] = function(raw)
     if not found then chat("no watched slots") end
     return
   end
-
+  
+  if cmd == "rexp" then
+        reportRestedXP()
+        return
+  end
+  
   chat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | on | off | info | reset")
+end
+
+-------------------------------------------------
+-- Rested XP reporting
+-------------------------------------------------
+local function reportRestedXP()
+  local r = GetXPExhaustion()
+  if not r then
+    chat("No rest.")
+    return
+  end
+  local m = UnitXPMax("player")
+  if not m or m == 0 then
+    chat("No XP data.")
+    return
+  end
+  local bubbles = math.floor((r * 20) / m + 0.5)
+  if bubbles > 30 then bubbles = 30 end
+  chat("Rest: " .. tostring(bubbles) .. " bubbles (" .. tostring(r) .. " XP)")
 end
 
 -------------------------------------------------
