@@ -6,18 +6,35 @@
 -- Slash commands: /rogu (RoarGuild), /godbod (GodBod)
 
 -------------------------------------------------
--- ROARRunlimited / RoarGuild
+-- Helpers
 -------------------------------------------------
-local EMOTE_TOKENS_BATTLE = { "ROAR","CHARGE","CHEER","FLEX" }
-local WATCH_SLOTS = {}   -- [instance] = { slot, chance=100, cd=6, last=0 }
-local WATCH_MODE = false
-local ENABLED = true
-
 local function chat(text)
   if DEFAULT_CHAT_FRAME then
     DEFAULT_CHAT_FRAME:AddMessage("|cffff4444RoarGuild:|r " .. text)
   end
 end
+
+local function godChat(text)
+  if DEFAULT_CHAT_FRAME then
+    DEFAULT_CHAT_FRAME:AddMessage("|cffff8000GodBod:|r " .. text)
+  end
+end
+
+local function split_cmd(raw)
+  local s = raw or ""
+  s = string.gsub(s, "^%s+", "")
+  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
+  if not cmd then cmd = "" rest = "" end
+  return cmd, rest
+end
+
+-------------------------------------------------
+-- RoarGuild / Battle Emotes
+-------------------------------------------------
+local EMOTE_TOKENS_BATTLE = { "ROAR","CHARGE","CHEER","FLEX" }
+local WATCH_SLOTS = {}   -- [instance] = { slot, chance=100, cd=6, last=0 }
+local WATCH_MODE = false
+local ENABLED = true
 
 local function ensureDB()
   if type(ROGUDB) ~= "table" then ROGUDB = {} end
@@ -55,97 +72,6 @@ local function doBattleEmoteForSlot(cfg)
   end
 end
 
-local function split_cmd(raw)
-  local s = raw or ""
-  s = string.gsub(s, "^%s+", "")
-  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
-  if not cmd then cmd = "" rest = "" end
-  return cmd, rest
-end
-
--- Hook UseAction
-local _Orig_UseAction = UseAction
-function UseAction(slot, checkCursor, onSelf)
-  ensureLoaded()
-  if WATCH_MODE then chat("pressed slot " .. tostring(slot)) end
-  for _, cfg in pairs(WATCH_SLOTS) do
-    if cfg.slot == slot then doBattleEmoteForSlot(cfg) end
-  end
-  return _Orig_UseAction(slot, checkCursor, onSelf)
-end
-
--- /rogu Slash Commands
-SLASH_ROGU1 = "/rogu"
-SlashCmdList["ROGU"] = function(raw)
-  ensureLoaded()
-  local cmd, rest = split_cmd(raw)
-
-  local _, _, slotIndex = string.find(cmd, "^slot(%d+)$")
-  if slotIndex then
-    local instance = tonumber(slotIndex)
-    local slot = tonumber(rest)
-    if instance and slot then
-      WATCH_SLOTS[instance] = WATCH_SLOTS[instance] or { slot = slot, chance = 100, cd = 6, last = 0 }
-      WATCH_SLOTS[instance].slot = slot
-      ensureDB().slots = WATCH_SLOTS
-      chat("instance"..instance.." watching slot "..slot)
-    else
-      chat("usage: /rogu slotX <slotNumber>")
-    end
-    return
-  end
-
-  local _, _, chanceIndex = string.find(cmd, "^chance(%d+)$")
-  if chanceIndex then
-    local instance = tonumber(chanceIndex)
-    local n = tonumber(rest)
-    local cfg = WATCH_SLOTS[instance]
-    if cfg and n and n >= 0 and n <= 100 then
-      cfg.chance = n
-      chat("instance"..instance.." chance set to "..n.."%")
-    else
-      chat("usage: /rogu chanceX <0-100> (instance must exist)")
-    end
-    return
-  end
-
-  local _, _, timerIndex = string.find(cmd, "^timer(%d+)$")
-  if timerIndex then
-    local instance = tonumber(timerIndex)
-    local n = tonumber(rest)
-    local cfg = WATCH_SLOTS[instance]
-    if cfg and n and n >= 0 then
-      cfg.cd = n
-      chat("instance"..instance.." cooldown set to "..n.."s")
-    else
-      chat("usage: /rogu timerX <seconds> (instance must exist)")
-    end
-    return
-  end
-
-  if cmd == "watch" then WATCH_MODE = not WATCH_MODE; chat("watch mode " .. (WATCH_MODE and "ON" or "OFF")); return end
-  if cmd == "on" then ENABLED = true; ensureDB().enabled = true; chat("RoarGuild enabled"); return end
-  if cmd == "off" then ENABLED = false; ensureDB().enabled = false; chat("RoarGuild disabled"); return end
-  if cmd == "reset" then WATCH_SLOTS = {}; ensureDB().slots = {}; chat("all watched slots cleared"); return end
-  if cmd == "info" then
-    chat("enabled: "..tostring(ENABLED))
-    local found = false
-    for instance, cfg in pairs(WATCH_SLOTS) do
-      found = true
-      chat("instance"..instance..": slot "..cfg.slot.." | chance "..cfg.chance.."% | cd "..cfg.cd.."s")
-    end
-    if not found then chat("no watched slots") end
-    return
-  end
-  
-  if cmd == "rexp" then
-        reportRestedXP()
-        return
-  end
-  
-  chat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | on | off | info | reset")
-end
-
 -------------------------------------------------
 -- Rested XP reporting
 -------------------------------------------------
@@ -166,7 +92,7 @@ local function reportRestedXP()
 end
 
 -------------------------------------------------
--- GodBod Integration
+-- GodBod / Exercise Prompts
 -------------------------------------------------
 local EXERCISES = {
   "Roll your shoulders slowly back ten times. Let the neck float.",
@@ -188,29 +114,6 @@ local GOD_LAST_TRIGGER_TIME = 0
 local GOD_COOLDOWN = 60
 local GOD_CHANCE = 100
 local GOD_ENABLED = true
-
-local function godChat(text)
-  if DEFAULT_CHAT_FRAME then
-    DEFAULT_CHAT_FRAME:AddMessage("|cffff8000GodBod:|r " .. text)
-  end
-end
-
-local function outputExercise(text)
-  local roll = math.random(1, 100)
-  if roll >= 99 then
-    SendChatMessage(text, "CHANNEL", nil, 6)
-  elseif roll >= 97 then
-    SendChatMessage(text, "CHANNEL", nil, 1)
-  elseif roll >= 95 then
-    SendChatMessage(text, "PARTY")
-  elseif roll >= 93 then
-    SendChatMessage(text, "YELL")
-  elseif roll >= 91 then
-    SendChatMessage(text, "SAY")
-  else
-    godChat(text)
-  end
-end
 
 local function ensureGodDB()
   if type(WorkThatGodBodDB) ~= "table" then WorkThatGodBodDB = {} end
@@ -240,22 +143,121 @@ local function triggerExercise()
   end
 end
 
--- Hook UseAction for GodBod
-local _Orig_UseAction_God = UseAction
+local function outputExercise(text)
+  local roll = math.random(1, 100)
+  if roll >= 99 then
+    SendChatMessage(text, "CHANNEL", nil, 6)
+  elseif roll >= 97 then
+    SendChatMessage(text, "CHANNEL", nil, 1)
+  elseif roll >= 95 then
+    SendChatMessage(text, "PARTY")
+  elseif roll >= 93 then
+    SendChatMessage(text, "YELL")
+  elseif roll >= 91 then
+    SendChatMessage(text, "SAY")
+  else
+    godChat(text)
+  end
+end
+
+-------------------------------------------------
+-- Hook UseAction (combined)
+-------------------------------------------------
+local _Orig_UseAction = UseAction
 function UseAction(slot, checkCursor, onSelf)
   ensureLoaded()
   ensureGodLoaded()
 
+  -- RoarGuild
   if WATCH_MODE then chat("pressed slot " .. tostring(slot)) end
-  for _, cfg in pairs(WATCH_SLOTS) do if cfg.slot == slot then doBattleEmoteForSlot(cfg) end end
+  for _, cfg in pairs(WATCH_SLOTS) do
+    if cfg.slot == slot then doBattleEmoteForSlot(cfg) end
+  end
 
+  -- GodBod
   if GOD_WATCH_MODE then godChat("pressed slot "..tostring(slot)) end
   if GOD_WATCH_SLOTS[slot] then triggerExercise() end
 
-  return _Orig_UseAction_God(slot, checkCursor, onSelf)
+  return _Orig_UseAction(slot, checkCursor, onSelf)
 end
 
--- /godbod slash commands
+-------------------------------------------------
+-- /rogu Slash Commands
+-------------------------------------------------
+SLASH_ROGU1 = "/rogu"
+SlashCmdList["ROGU"] = function(raw)
+  ensureLoaded()
+  local cmd, rest = split_cmd(raw)
+
+  -- slotX
+  local _, _, slotIndex = string.find(cmd, "^slot(%d+)$")
+  if slotIndex then
+    local instance = tonumber(slotIndex)
+    local slot = tonumber(rest)
+    if instance and slot then
+      WATCH_SLOTS[instance] = WATCH_SLOTS[instance] or { slot = slot, chance = 100, cd = 6, last = 0 }
+      WATCH_SLOTS[instance].slot = slot
+      ensureDB().slots = WATCH_SLOTS
+      chat("instance"..instance.." watching slot "..slot)
+    else
+      chat("usage: /rogu slotX <slotNumber>")
+    end
+    return
+  end
+
+  -- chanceX
+  local _, _, chanceIndex = string.find(cmd, "^chance(%d+)$")
+  if chanceIndex then
+    local instance = tonumber(chanceIndex)
+    local n = tonumber(rest)
+    local cfg = WATCH_SLOTS[instance]
+    if cfg and n and n >= 0 and n <= 100 then
+      cfg.chance = n
+      chat("instance"..instance.." chance set to "..n.."%")
+    else
+      chat("usage: /rogu chanceX <0-100> (instance must exist)")
+    end
+    return
+  end
+
+  -- timerX
+  local _, _, timerIndex = string.find(cmd, "^timer(%d+)$")
+  if timerIndex then
+    local instance = tonumber(timerIndex)
+    local n = tonumber(rest)
+    local cfg = WATCH_SLOTS[instance]
+    if cfg and n and n >= 0 then
+      cfg.cd = n
+      chat("instance"..instance.." cooldown set to "..n.."s")
+    else
+      chat("usage: /rogu timerX <seconds> (instance must exist)")
+    end
+    return
+  end
+
+  if cmd == "watch" then WATCH_MODE = not WATCH_MODE; chat("watch mode " .. (WATCH_MODE and "ON" or "OFF")); return end
+  if cmd == "on" then ENABLED = true; ensureDB().enabled = true; chat("RoarGuild enabled"); return end
+  if cmd == "off" then ENABLED = false; ensureDB().enabled = false; chat("RoarGuild disabled"); return end
+  if cmd == "reset" then WATCH_SLOTS = {}; ensureDB().slots = {}; chat("all watched slots cleared"); return end
+  if cmd == "info" then
+    chat("enabled: "..tostring(ENABLED))
+    local found = false
+    for instance, cfg in pairs(WATCH_SLOTS) do
+      found = true
+      chat("instance"..instance..": slot "..cfg.slot.." | chance "..cfg.chance.."% | cd "..cfg.cd.."s")
+    end
+    if not found then chat("no watched slots") end
+    return
+  end
+
+  if cmd == "rexp" then reportRestedXP(); return end
+
+  chat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | on | off | info | reset | rexp")
+end
+
+-------------------------------------------------
+-- /godbod Slash Commands
+-------------------------------------------------
 SLASH_GODBOD1 = "/godbod"
 SlashCmdList["GODBOD"] = function(raw)
   ensureGodLoaded()
@@ -263,12 +265,7 @@ SlashCmdList["GODBOD"] = function(raw)
 
   if cmd == "slot" then
     local n = tonumber(rest)
-    if n and n >= 1 then
-      GOD_WATCH_SLOTS[n] = true
-      godChat("watching slot "..n.." (added).")
-    else
-      godChat("usage: /godbod slot <number>")
-    end
+    if n and n >= 1 then GOD_WATCH_SLOTS[n] = true; godChat("watching slot "..n.." (added).") else godChat("usage: /godbod slot <number>") end
     return
   end
 
@@ -293,7 +290,9 @@ SlashCmdList["GODBOD"] = function(raw)
   godChat("/godbod slot <n> | unslot <n> | clear | watch | chance <0-100> | cd <s> | on | off | info")
 end
 
+-------------------------------------------------
 -- Init / RNG / Save
+-------------------------------------------------
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("PLAYER_LOGOUT")
