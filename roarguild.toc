@@ -1,8 +1,9 @@
 ## Interface: 11200
 ## Title: RoarGuild
-## Notes: Plays roar-guild emotes from multiple independently configured action slots and includes GodBod exercise reminders.
+## Notes: Plays roar-guild emotes from multiple independently configured action slots and integrates GodBod exercises.
 ## Author: babunigaming
 ## Version: 1.1
-## SavedVariables: ROGUDB, WorkThatGodBodDB
+## SavedVariablesPerCharacter: ROGUDB
+## SavedVariablesPerCharacter: WorkThatGodBodDB
 
 roarguild.lua
