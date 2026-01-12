@@ -6,7 +6,7 @@
 -------------------------------------------------
 -- ROED / Battle Emote
 -------------------------------------------------
-local EMOTE_TOKENS_BATTLE = { "ROAR","CHARGE","CHEER","FLEX" }
+local EMOTE_TOKENS_BATTLE = { "ROAR","CHEER","FLEX" }
 
 local WATCH_SLOTS = {} -- [instance] = {slot, chance, cd, last}
 local WATCH_MODE = false
@@ -227,9 +227,31 @@ SlashCmdList["ROGU"] = function(raw)
   end
   if cmd == "on" then ENABLED = true roarChat("enabled"); return end
   if cmd == "off" then ENABLED = false roarChat("disabled"); return end
+  if cmd == "rexp" then
+    
+-- RESTED XP
+  local function reportRestedXP()
+    local r = GetXPExhaustion()
+    if not r then
+      roarChat("No rest.")
+      return
+    end
+    local m = UnitXPMax("player")
+    if not m or m == 0 then
+      roarChat("No XP data.")
+      return
+    end
+    local bubbles = math.floor((r * 20) / m + 0.5)
+    if bubbles > 30 then bubbles = 30 end
+    roarChat("Rest: "..bubbles.." bubbles ("..r.." XP)")
+  end
+  reportRestedXP()
+  return
+end
 
   roarChat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | info | reset | on | off")
 end
+
 
 -------------------------------------------------
 -- Slash Commands /godbod
