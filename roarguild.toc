@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: RoarGuild
-## Notes: ROARRunlimited + GodBod combined
+## Notes: Battle emotes on action slots with optional global trigger and integrated GodBod exercises.
 ## Author: babunigaming
-## Version: 1.0
-## SavedVariables: ROEDDB, WorkThatGodBodDB
+## Version: 1.2
+## SavedVariables: ROGUDB, WorkThatGodBodDB
 
-RoarGuild.lua
+roarguild.lua
