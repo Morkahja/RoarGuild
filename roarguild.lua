@@ -4,7 +4,7 @@
 -- SavedVariables: ROGUDB, WorkThatGodBodDB
 
 -------------------------------------------------
--- ROED / Battle Emote
+-- ROGU / Battle Emote
 -------------------------------------------------
 local EMOTE_TOKENS_BATTLE = { "ROAR","CHEER","FLEX" }
 
@@ -236,16 +236,29 @@ local function triggerExercise()
 end
 
 -------------------------------------------------
--- Hook UseAction
+-- Hook UseAction (with global 0.5% RoarGuild chance)
 -------------------------------------------------
 local _Orig_UseAction = UseAction
 function UseAction(slot, checkCursor, onSelf)
   roarEnsureLoaded()
   godEnsureLoaded()
 
+  local matched = false
+
   if WATCH_MODE then roarChat("pressed slot "..tostring(slot)) end
   for _, cfg in pairs(WATCH_SLOTS) do
-    if cfg.slot == slot then doBattleEmoteForSlot(cfg) end
+    if cfg.slot == slot then
+      matched = true
+      doBattleEmoteForSlot(cfg)
+    end
+  end
+
+  -- Global fallback: 0.5% chance on any action slot
+  if ENABLED and not matched and slot and slot >= 1 and slot <= 200 then
+    if math.random(1,1000) <= 5 then
+      local e = pick(EMOTE_TOKENS_BATTLE)
+      if e then performEmote(e) end
+    end
   end
 
   if GOD_WATCH_MODE then godChat("pressed slot "..tostring(slot)) end
@@ -253,6 +266,7 @@ function UseAction(slot, checkCursor, onSelf)
 
   return _Orig_UseAction(slot, checkCursor, onSelf)
 end
+
 
 -------------------------------------------------
 -- Slash Commands /rogu
