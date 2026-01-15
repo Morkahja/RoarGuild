@@ -236,37 +236,45 @@ local function triggerExercise()
 end
 
 -------------------------------------------------
--- Hook UseAction (with global 0.5% RoarGuild chance)
+-- Hook UseAction (preserve slot logic + global 0.5%)
 -------------------------------------------------
 local _Orig_UseAction = UseAction
 function UseAction(slot, checkCursor, onSelf)
   roarEnsureLoaded()
   godEnsureLoaded()
 
-  local matched = false
+  -- Original RoarGuild slot-based logic (UNCHANGED BEHAVIOR)
+  if WATCH_MODE then
+    roarChat("pressed slot "..tostring(slot))
+  end
 
-  if WATCH_MODE then roarChat("pressed slot "..tostring(slot)) end
   for _, cfg in pairs(WATCH_SLOTS) do
     if cfg.slot == slot then
-      matched = true
       doBattleEmoteForSlot(cfg)
     end
   end
 
-  -- Global fallback: 0.5% chance on any action slot
-  if ENABLED and not matched and slot and slot >= 1 and slot <= 200 then
+  -- Global RoarGuild fallback: independent 0.5% chance on any action
+  if ENABLED and slot and slot >= 1 and slot <= 200 then
     if math.random(1,1000) <= 5 then
       local e = pick(EMOTE_TOKENS_BATTLE)
-      if e then performEmote(e) end
+      if e then
+        performEmote(e)
+      end
     end
   end
 
-  if GOD_WATCH_MODE then godChat("pressed slot "..tostring(slot)) end
-  if GOD_WATCH_SLOTS[slot] then triggerExercise() end
+  -- GodBod logic (UNCHANGED)
+  if GOD_WATCH_MODE then
+    godChat("pressed slot "..tostring(slot))
+  end
+
+  if GOD_WATCH_SLOTS[slot] then
+    triggerExercise()
+  end
 
   return _Orig_UseAction(slot, checkCursor, onSelf)
 end
-
 
 -------------------------------------------------
 -- Slash Commands /rogu
