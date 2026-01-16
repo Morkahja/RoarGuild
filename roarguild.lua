@@ -193,19 +193,22 @@ end
 local function outputExercise(text)
   local roll = math.random(1,100)
   if roll >= 99 then
-    SendChatMessage(text,"CHANNEL",nil,6)
+    SendChatMessage(text, "CHANNEL", nil, 6)
   elseif roll >= 97 then
-    SendChatMessage(text,"CHANNEL",nil,1)
+    SendChatMessage(text, "CHANNEL", nil, 1)
   elseif roll >= 95 then
-    SendChatMessage(text,"PARTY")
+    SendChatMessage(text, "PARTY")
   elseif roll >= 93 then
-    SendChatMessage(text,"YELL")
+    SendChatMessage(text, "YELL")
   elseif roll >= 91 then
-    SendChatMessage(text,"SAY")
+    SendChatMessage(text, "SAY")
+  elseif roll >= 87 then
+    SendChatMessage(text, "GUILD")
   else
     godChat(text)
   end
 end
+
 
 local function godEnsureDB()
   if type(WorkThatGodBodDB) ~= "table" then WorkThatGodBodDB = {} end
