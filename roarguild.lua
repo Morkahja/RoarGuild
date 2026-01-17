@@ -426,6 +426,7 @@ SlashCmdList["ROGU"] = function(raw)
         LAST_ROAR_TIME = GetTime()
     end
     return
+  end
   if cmd == "emote" then addRoarEmote(rest) return end
   if cmd == "emotelist" then listRoarEmotes() return end
 
