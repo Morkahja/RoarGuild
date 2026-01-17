@@ -476,14 +476,29 @@ f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("PLAYER_LOGOUT")
 
 f:SetScript("OnEvent", function(_, event)
-  if event=="PLAYER_LOGIN" then
-    math.randomseed(math.floor(GetTime()*1000))
+  if event == "PLAYER_LOGIN" then
+    math.randomseed(math.floor(GetTime() * 1000))
     math.random()
-  elseif event=="PLAYER_LOGOUT" then
+
+    -- Force-create DB tables immediately on login (so /reload persists them)
+    local db = roarEnsureDB()
+    if type(db.emotes) ~= "table" then
+      db.emotes = { [1] = { emote = "ROAR" } }
+    elseif type(db.emotes[1]) ~= "table" or db.emotes[1].emote ~= "ROAR" then
+      db.emotes[1] = { emote = "ROAR" }
+    end
+
+  elseif event == "PLAYER_LOGOUT" then
     local db = roarEnsureDB()
     db.slots = WATCH_SLOTS
     db.enabled = ENABLED
-    db.emotes = roarEnsureEmotes()
+
+    -- Always persist emotes
+    if type(db.emotes) ~= "table" then
+      db.emotes = { [1] = { emote = "ROAR" } }
+    elseif type(db.emotes[1]) ~= "table" or db.emotes[1].emote ~= "ROAR" then
+      db.emotes[1] = { emote = "ROAR" }
+    end
 
     local goddb = godEnsureDB()
     goddb.slots = GOD_WATCH_SLOTS
