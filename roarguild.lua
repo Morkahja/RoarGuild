@@ -29,6 +29,41 @@ local function roarEnsureDB()
   return ROGUDB
 end
 
+-------------------------------------------------
+-- RoarGuild Emotes DB Helpers
+-------------------------------------------------
+local function roarEnsureEmotes()
+    local db = roarEnsureDB()
+    if type(db.emotes) ~= "table" then
+        db.emotes = {
+            [1] = { emote = "ROAR" }  -- default emote
+        }
+    end
+    return db.emotes
+end
+
+local function addRoarEmote(name)
+    if not name or name == "" then return end
+    local emotes = roarEnsureEmotes()
+    for _, entry in pairs(emotes) do
+        if entry.emote == name:upper() then return end
+    end
+    local nextID = 1
+    for id in pairs(emotes) do
+        if id >= nextID then nextID = id + 1 end
+    end
+    emotes[nextID] = { emote = name:upper() }
+    roarChat("Added emote '"..name:upper().."' with ID "..nextID)
+end
+
+local function listRoarEmotes()
+    local emotes = roarEnsureEmotes()
+    roarChat("Emote list:")
+    for id, entry in pairs(emotes) do
+        roarChat("ID "..id..": "..entry.emote)
+    end
+end
+
 local _roarLoaded = false
 local function roarEnsureLoaded()
   if _roarLoaded then return end
@@ -391,6 +426,9 @@ SlashCmdList["ROGU"] = function(raw)
         LAST_ROAR_TIME = GetTime()
     end
     return
+  if cmd == "emote" then addRoarEmote(rest) return end
+  if cmd == "emotelist" then listRoarEmotes() return end
+
 end
 
   
