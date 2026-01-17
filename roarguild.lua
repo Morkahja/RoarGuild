@@ -378,82 +378,55 @@ end
 -------------------------------------------------
 -- Slash Commands /rogu
 -------------------------------------------------
+-- Slash Commands /rogu
 SLASH_ROGU1 = "/rogu"
 SlashCmdList["ROGU"] = function(raw)
-  roarEnsureLoaded()
-  local cmd, rest = split_cmd(raw)
+    roarEnsureLoaded()   -- initialize DB and default emotes immediately
+    local cmd, rest = split_cmd(raw)
 
-  local _, _, slotIndex = string.find(cmd, "^slot(%d+)$")
-  if slotIndex then
-    local instance = tonumber(slotIndex)
-    local slot = tonumber(rest)
-    if instance and slot then
-      WATCH_SLOTS[instance] = WATCH_SLOTS[instance] or {}
-      WATCH_SLOTS[instance].slot = slot
-      WATCH_SLOTS[instance].chance = WATCH_SLOTS[instance].chance or 100
-      WATCH_SLOTS[instance].cd = WATCH_SLOTS[instance].cd or 6
-      WATCH_SLOTS[instance].last = 0
-      roarChat("instance"..instance.." watching slot "..slot)
-    else
-      roarChat("usage: /rogu slotX <slot>")
+    local _, _, slotIndex = string.find(cmd, "^slot(%d+)$")
+    if slotIndex then
+        local instance = tonumber(slotIndex)
+        local slot = tonumber(rest)
+        if instance and slot then
+            WATCH_SLOTS[instance] = WATCH_SLOTS[instance] or {}
+            WATCH_SLOTS[instance].slot = slot
+            WATCH_SLOTS[instance].chance = WATCH_SLOTS[instance].chance or 100
+            WATCH_SLOTS[instance].cd = WATCH_SLOTS[instance].cd or 6
+            WATCH_SLOTS[instance].last = 0
+            roarChat("instance"..instance.." watching slot "..slot)
+        else
+            roarChat("usage: /rogu slotX <slot>")
+        end
+        return
     end
-    return
-  end
 
-  local _, _, chanceIndex = string.find(cmd, "^chance(%d+)$")
-  if chanceIndex then
-    local instance = tonumber(chanceIndex)
-    local n = tonumber(rest)
-    if WATCH_SLOTS[instance] and n and n>=0 and n<=100 then
-      WATCH_SLOTS[instance].chance = n
-      roarChat("instance"..instance.." chance "..n.."%")
-    else
-      roarChat("invalid instance or value")
+    if cmd == "emote" then addRoarEmote(rest); return end
+    if cmd == "emotelist" then listRoarEmotes(); return end
+    if cmd == "rexp" then reportRestedXP(); return end
+    if cmd == "on" then ENABLED = true; roarChat("enabled"); return end
+    if cmd == "off" then ENABLED = false; roarChat("disabled"); return end
+    if cmd == "watch" then WATCH_MODE = not WATCH_MODE; roarChat("watch mode "..(WATCH_MODE and "ON" or "OFF")); return end
+    if cmd == "reset" then WATCH_SLOTS = {}; roarEnsureDB().slots = WATCH_SLOTS; roarChat("all instances cleared"); return end
+    if cmd == "info" then
+        roarChat("enabled: "..tostring(ENABLED))
+        for i,cfg in pairs(WATCH_SLOTS) do
+            roarChat("instance"..i..": slot "..cfg.slot.." | chance "..cfg.chance.."% | cd "..cfg.cd.."s")
+        end
+        return
     end
-    return
-  end
+    if cmd == "roar" then
+        local e = pick(getBattleEmotes())
+        if e then
+            performEmote(e)
+            LAST_ROAR_TIME = GetTime()
+        end
+        return
+    end
 
-  local _, _, timerIndex = string.find(cmd, "^timer(%d+)$")
-  if timerIndex then
-    local instance = tonumber(timerIndex)
-    local n = tonumber(rest)
-    if WATCH_SLOTS[instance] and n and n>=0 then
-      WATCH_SLOTS[instance].cd = n
-      roarChat("instance"..instance.." cooldown "..n.."s")
-    else
-      roarChat("invalid instance or value")
-    end
-    return
-  end
-
-  if cmd == "watch" then WATCH_MODE = not WATCH_MODE; roarChat("watch mode "..(WATCH_MODE and "ON" or "OFF")); return end
-  if cmd == "reset" then WATCH_SLOTS = {}; roarEnsureDB().slots = WATCH_SLOTS; roarChat("all instances cleared"); return end
-  if cmd == "info" then
-    roarChat("enabled: "..tostring(ENABLED))
-    for i,cfg in pairs(WATCH_SLOTS) do
-      roarChat("instance"..i..": slot "..cfg.slot.." | chance "..cfg.chance.."% | cd "..cfg.cd.."s")
-    end
-    return
-  end
-  if cmd == "on" then ENABLED = true roarChat("enabled"); return end
-  if cmd == "off" then ENABLED = false roarChat("disabled"); return end
-  if cmd == "rexp" then reportRestedXP() return end
-  if cmd == "roar" then
-    local e = pick(getBattleEmotes())
-    if e then
-        performEmote(e)
-        LAST_ROAR_TIME = GetTime()
-    end
-    return
-  end
-  if cmd == "emote" then addRoarEmote(rest) return end
-  if cmd == "emotelist" then listRoarEmotes() return end
-
+    roarChat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | info | reset | on | off | emote <name> | emotelist | roar | rexp")
 end
 
-  
-  roarChat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | info | reset | on | off")
-end
 
 
 -------------------------------------------------
