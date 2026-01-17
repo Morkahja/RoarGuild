@@ -481,10 +481,16 @@ end
 -------------------------------------------------
 -- Save on logout
 -------------------------------------------------
+local f = CreateFrame("Frame")
+f:RegisterEvent("PLAYER_LOGIN")
+f:RegisterEvent("PLAYER_LOGOUT")
+
 f:SetScript("OnEvent", function(_, event)
   if event=="PLAYER_LOGIN" then
     math.randomseed(math.floor(GetTime()*1000))
     math.random()
+    roarEnsureLoaded()  -- initialize DB and default emotes immediately
+    godEnsureLoaded()
   elseif event=="PLAYER_LOGOUT" then
     local db = roarEnsureDB()
     db.slots = WATCH_SLOTS
