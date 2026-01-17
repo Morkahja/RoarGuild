@@ -1,8 +1,3 @@
-Here is a **Discord-clean, copy-paste-ready** version.
-Uses bold headers, bullets, and spacing that render well in Discord without markdown weirdness.
-
----
-
 **🦁 RoarGuild Addon**
 
 **Version:** 1.2
