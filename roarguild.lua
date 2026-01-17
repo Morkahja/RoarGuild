@@ -4,13 +4,18 @@
 -- SavedVariables: ROGUDB, WorkThatGodBodDB
 
 -------------------------------------------------
--- ROGU / Battle Emote
+-- ROGU / Battle Emote - RoarGuild helpers
 -------------------------------------------------
 local EMOTE_TOKENS_BATTLE = { "ROAR","CHEER","FLEX" }
 
 local WATCH_SLOTS = {} -- [instance] = {slot, chance, cd, last}
 local WATCH_MODE = false
 local ENABLED = true
+local LAST_ROAR_TIME = 0
+local LAST_REMINDER_TIME = 0
+local ROAR_REMINDER_INTERVAL = 420
+local ROAR_REMINDER_CD = 73           
+
 
 local function roarChat(text)
   if DEFAULT_CHAT_FRAME then
@@ -55,12 +60,15 @@ end
 local function doBattleEmoteForSlot(cfg)
   if not ENABLED or not cfg then return end
   local now = GetTime()
-  cfg.last = cfg.last or 0
+    cfg.last = cfg.last or 0
   if now - cfg.last < cfg.cd then return end
   cfg.last = now
   if math.random(1,100) <= cfg.chance then
     local e = pick(EMOTE_TOKENS_BATTLE)
-    if e then performEmote(e) end
+    if e then 
+      performEmote(e)
+      LAST_ROAR_TIME = now
+    end
   end
 end
 
@@ -71,6 +79,26 @@ local function split_cmd(raw)
   if not cmd then cmd = "" rest = "" end
   return cmd, rest
 end
+
+local function reportRestedXP()
+  local r = GetXPExhaustion()
+  if not r then
+    roarChat("No rest.")
+    return
+  end
+
+  local m = UnitXPMax("player")
+  if not m or m == 0 then
+    roarChat("No XP data.")
+    return
+  end
+
+  local bubbles = math.floor((r * 20) / m + 0.5)
+  if bubbles > 30 then bubbles = 30 end
+
+  roarChat("Rest: "..bubbles.." bubbles ("..r.." XP)")
+end
+
 
 -------------------------------------------------
 -- GodBod
@@ -239,14 +267,17 @@ local function triggerExercise()
 end
 
 -------------------------------------------------
--- Hook UseAction (preserve slot logic + global 0.5%)
+-- Hook UseAction 
 -------------------------------------------------
 local _Orig_UseAction = UseAction
+
 function UseAction(slot, checkCursor, onSelf)
   roarEnsureLoaded()
   godEnsureLoaded()
 
-  -- Original RoarGuild slot-based logic (UNCHANGED BEHAVIOR)
+  local now = GetTime()
+
+  -- Original RoarGuild slot-based logic 
   if WATCH_MODE then
     roarChat("pressed slot "..tostring(slot))
   end
@@ -263,11 +294,21 @@ function UseAction(slot, checkCursor, onSelf)
       local e = pick(EMOTE_TOKENS_BATTLE)
       if e then
         performEmote(e)
+        LAST_ROAR_TIME = now
       end
     end
   end
 
-  -- GodBod logic (UNCHANGED)
+  -- Roar reminder logic
+  if ENABLED and LAST_ROAR_TIME > 0 then
+    if now - LAST_ROAR_TIME >= ROAR_REMINDER_INTERVAL
+       and now - LAST_REMINDER_TIME >= ROAR_REMINDER_CD then
+      roarChat("You have not roared in a while.")
+      LAST_REMINDER_TIME = now
+    end
+  end
+
+  -- GodBod logic (unchanged)
   if GOD_WATCH_MODE then
     godChat("pressed slot "..tostring(slot))
   end
@@ -278,6 +319,7 @@ function UseAction(slot, checkCursor, onSelf)
 
   return _Orig_UseAction(slot, checkCursor, onSelf)
 end
+
 
 -------------------------------------------------
 -- Slash Commands /rogu
@@ -342,27 +384,10 @@ SlashCmdList["ROGU"] = function(raw)
   if cmd == "on" then ENABLED = true roarChat("enabled"); return end
   if cmd == "off" then ENABLED = false roarChat("disabled"); return end
   if cmd == "rexp" then
-    
--- RESTED XP
-  local function reportRestedXP()
-    local r = GetXPExhaustion()
-    if not r then
-      roarChat("No rest.")
-      return
-    end
-    local m = UnitXPMax("player")
-    if not m or m == 0 then
-      roarChat("No XP data.")
-      return
-    end
-    local bubbles = math.floor((r * 20) / m + 0.5)
-    if bubbles > 30 then bubbles = 30 end
-    roarChat("Rest: "..bubbles.." bubbles ("..r.." XP)")
-  end
   reportRestedXP()
   return
 end
-
+  
   roarChat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | info | reset | on | off")
 end
 
