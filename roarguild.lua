@@ -383,10 +383,16 @@ SlashCmdList["ROGU"] = function(raw)
   end
   if cmd == "on" then ENABLED = true roarChat("enabled"); return end
   if cmd == "off" then ENABLED = false roarChat("disabled"); return end
-  if cmd == "rexp" then
-  reportRestedXP()
-  return
+  if cmd == "rexp" then reportRestedXP() return end
+  if cmd == "roar" then
+    local e = pick(EMOTE_TOKENS_BATTLE)
+    if e then
+        performEmote(e)
+        LAST_ROAR_TIME = GetTime()
+    end
+    return
 end
+
   
   roarChat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | watch | info | reset | on | off")
 end
