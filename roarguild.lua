@@ -6,7 +6,15 @@
 -------------------------------------------------
 -- ROGU / Battle Emote - RoarGuild helpers
 -------------------------------------------------
-local EMOTE_TOKENS_BATTLE = { "ROAR","CHEER","FLEX" }
+local function getBattleEmotes()
+    local emotes = roarEnsureEmotes()
+    local t = {}
+    for _, entry in pairs(emotes) do
+        t[#t+1] = entry.emote
+    end
+    return t
+end
+
 
 local WATCH_SLOTS = {} -- [instance] = {slot, chance, cd, last}
 local WATCH_MODE = false
@@ -101,19 +109,20 @@ local function performEmote(token)
 end
 
 local function doBattleEmoteForSlot(cfg)
-  if not ENABLED or not cfg then return end
-  local now = GetTime()
+    if not ENABLED or not cfg then return end
+    local now = GetTime()
     cfg.last = cfg.last or 0
-  if now - cfg.last < cfg.cd then return end
-  cfg.last = now
-  if math.random(1,100) <= cfg.chance then
-    local e = pick(EMOTE_TOKENS_BATTLE)
-    if e then 
-      performEmote(e)
-      LAST_ROAR_TIME = now
+    if now - cfg.last < cfg.cd then return end
+    cfg.last = now
+    if math.random(1,100) <= cfg.chance then
+        local e = pick(getBattleEmotes())
+        if e then
+            performEmote(e)
+            LAST_ROAR_TIME = now
+        end
     end
-  end
 end
+
 
 local function split_cmd(raw)
   local s = raw or ""
@@ -336,7 +345,7 @@ function UseAction(slot, checkCursor, onSelf)
   -- Global RoarGuild fallback: independent 0.5% chance on any action
   if ENABLED and slot and slot >= 1 and slot <= 200 then
     if math.random(1,1000) <= 5 then
-      local e = pick(EMOTE_TOKENS_BATTLE)
+      local e = pick(getBattleEmotes())
       if e then
         performEmote(e)
         LAST_ROAR_TIME = now
@@ -430,7 +439,7 @@ SlashCmdList["ROGU"] = function(raw)
   if cmd == "off" then ENABLED = false roarChat("disabled"); return end
   if cmd == "rexp" then reportRestedXP() return end
   if cmd == "roar" then
-    local e = pick(EMOTE_TOKENS_BATTLE)
+    local e = pick(getBattleEmotes())
     if e then
         performEmote(e)
         LAST_ROAR_TIME = GetTime()
