@@ -68,15 +68,23 @@ local _roarLoaded = false
 local function roarEnsureLoaded()
   if _roarLoaded then return end
   local db = roarEnsureDB()
-  WATCH_SLOTS = db.slots
+
+  -- ensure slots exist
+  WATCH_SLOTS = db.slots or {}
   for _, cfg in pairs(WATCH_SLOTS) do
     if cfg.chance == nil then cfg.chance = 100 end
     if cfg.cd == nil then cfg.cd = 6 end
     if cfg.last == nil then cfg.last = 0 end
   end
+
+  -- ensure emotes exist
+  roarEnsureEmotes()
+
   if db.enabled ~= nil then ENABLED = db.enabled end
   _roarLoaded = true
 end
+
+-- RoarGuild Emotes DB Helpers end
 
 local function pick(t)
   local n = table.getn(t)
@@ -114,7 +122,9 @@ local function split_cmd(raw)
   if not cmd then cmd = "" rest = "" end
   return cmd, rest
 end
-
+-------------------------------------------------
+-- RESTED XP
+-------------------------------------------------
 local function reportRestedXP()
   local r = GetXPExhaustion()
   if not r then
@@ -469,12 +479,8 @@ SlashCmdList["GODBOD"] = function(raw)
 end
 
 -------------------------------------------------
--- Init / Save
+-- Save on logout
 -------------------------------------------------
-local f = CreateFrame("Frame")
-f:RegisterEvent("PLAYER_LOGIN")
-f:RegisterEvent("PLAYER_LOGOUT")
-
 f:SetScript("OnEvent", function(_, event)
   if event=="PLAYER_LOGIN" then
     math.randomseed(math.floor(GetTime()*1000))
@@ -483,6 +489,7 @@ f:SetScript("OnEvent", function(_, event)
     local db = roarEnsureDB()
     db.slots = WATCH_SLOTS
     db.enabled = ENABLED
+    db.emotes = roarEnsureEmotes()  -- persist the emotes table
 
     local goddb = godEnsureDB()
     goddb.slots = GOD_WATCH_SLOTS
