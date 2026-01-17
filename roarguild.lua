@@ -43,12 +43,15 @@ end
 local function roarEnsureEmotes()
     local db = roarEnsureDB()
     if type(db.emotes) ~= "table" then
-        db.emotes = {
-            [1] = { emote = "ROAR" }  -- default emote
-        }
+        db.emotes = {}
+    end
+    -- ensure default emote exists
+    if #db.emotes == 0 then
+        db.emotes[1] = { emote = "ROAR" }
     end
     return db.emotes
 end
+
 
 local function addRoarEmote(name)
     if not name or name == "" then return end
