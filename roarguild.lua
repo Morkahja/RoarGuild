@@ -26,7 +26,46 @@ end
 local function roarEnsureDB()
   if type(ROGUDB) ~= "table" then ROGUDB = {} end
   if type(ROGUDB.slots) ~= "table" then ROGUDB.slots = {} end
+  if type(ROGUDB.emotes) ~= "table" then ROGUDB.emotes = {} end
   return ROGUDB
+end
+
+local function roarEnsureEmotes()
+  local db = roarEnsureDB()
+
+  -- guarantee table exists
+  if type(db.emotes) ~= "table" then db.emotes = {} end
+
+  -- guarantee ID 1 exists and is ROAR
+  if type(db.emotes[1]) ~= "table" or type(db.emotes[1].emote) ~= "string" or db.emotes[1].emote == "" then
+    db.emotes[1] = { emote = "ROAR" }
+  else
+    db.emotes[1].emote = string.upper(db.emotes[1].emote)
+    if db.emotes[1].emote ~= "ROAR" then
+      db.emotes[1].emote = "ROAR"
+    end
+  end
+
+  return db.emotes
+end
+
+local _roarLoaded = false
+local function roarEnsureLoaded()
+  if _roarLoaded then return end
+  local db = roarEnsureDB()
+
+  WATCH_SLOTS = db.slots
+  for _, cfg in pairs(WATCH_SLOTS) do
+    if cfg.chance == nil then cfg.chance = 100 end
+    if cfg.cd == nil then cfg.cd = 6 end
+    if cfg.last == nil then cfg.last = 0 end
+  end
+
+   -- ensure emote DB exists immediately on login/reload
+  roarEnsureEmotes()
+
+  if db.enabled ~= nil then ENABLED = db.enabled end
+  _roarLoaded = true
 end
 
 local _roarLoaded = false
@@ -444,6 +483,7 @@ f:SetScript("OnEvent", function(_, event)
     local db = roarEnsureDB()
     db.slots = WATCH_SLOTS
     db.enabled = ENABLED
+    db.emotes = roarEnsureEmotes()
 
     local goddb = godEnsureDB()
     goddb.slots = GOD_WATCH_SLOTS
