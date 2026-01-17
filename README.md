@@ -1,72 +1,108 @@
-RoarGuild Addon – ReadMe
+Here is a **Discord-clean, copy-paste-ready** version.
+Uses bold headers, bullets, and spacing that render well in Discord without markdown weirdness.
 
-Version: 1.1
-Author: babunigaming
-Notes: Plays battle-themed “roar” emotes from multiple independently configured action slots and integrates GodBod exercise reminders.
+---
 
-Features
+**🦁 RoarGuild Addon**
 
-RoarGuild: Assign multiple action slots to trigger random battle-themed emotes with configurable chance and cooldown per slot.
+**Version:** 1.2
+**Author:** babunigaming
+**Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
 
-GodBod: Assign action slots to trigger exercise reminders while gaming. Configurable chance and cooldown.
+RoarGuild is a flavor-first action bar addon that makes your character feel alive.
+It triggers emotes and movement-based rituals directly from gameplay—no macros, no rotation pollution.
+Includes **GodBod**, a physical reminder system to keep the player alive too.
 
-Both systems run independently with separate slash commands.
+━━━━━━━━━━━━━━━━━━
 
-Slash Commands
-RoarGuild (/rogu)
+**What It Does**
 
-/rogu slotX <n> – Assign slot number <n> to instance X to trigger emotes.
+**RoarGuild**
+• Uses real action bar presses as triggers
+• Each watched slot belongs to an *instance* with its own cooldown and chance
+• Emotes are no longer hardcoded
+• You maintain a **master emote list**
+• Each instance can draw from **multiple emotes**, chosen randomly
+• Default emote is always **ROAR**
+• Global **0.5% chance** to emote on any action for emergent flavor
 
-/rogu chanceX <0-100> – Set the percent chance that instance X will trigger an emote.
+**GodBod**
+• Independent system
+• Action bar presses trigger short exercise reminders
+• Configurable chance and cooldown
+• Outputs locally or to party/guild/chat depending on roll
+• Designed to interrupt sedentary play without breaking immersion
 
-/rogu timerX <seconds> – Set cooldown in seconds for instance X.
+The two systems share a hook but are otherwise isolated.
 
-/rogu watch – Toggle watch mode to see which slot you press.
+━━━━━━━━━━━━━━━━━━
 
-/rogu on / /rogu off – Enable or disable RoarGuild.
+**RoarGuild Slash Commands** (`/rogu`)
 
-/rogu info – Display enabled status and all watched instances with their slots, chance, and cooldown.
+**Slot & Timing**
+• `/rogu slotX <slot>` — assign slot to instance X
+• `/rogu chanceX <0–100>` — trigger chance for instance X
+• `/rogu timerX <seconds>` — cooldown for instance X
 
-/rogu reset – Clear all watched instances.
+**Emote System**
+• `/rogu emote <TOKEN>` — add emote to master list
+• `/rogu emote list` — list all emotes with IDs
+• `/rogu emoteX <id>` — add emote ID to instance X
+• `/rogu emoteX -<id>` — remove emote ID
+• `/rogu emoteX clear` — reset instance X to ROAR
+• `/rogu emoteX list` — list emotes for instance X
 
-GodBod (/godbod)
+**Control & Info**
+• `/rogu watch` — print pressed slots
+• `/rogu info` — full instance overview
+• `/rogu reset` — clear all instances
+• `/rogu on` / `/rogu off` — enable or disable
+• `/rogu roar` — manually fire instance 1
+• `/rogu rexp` — show rested XP (max 30 bubbles)
 
-/godbod slot <n> – Add slot <n> to trigger exercises.
+━━━━━━━━━━━━━━━━━━
 
-/godbod unslot <n> – Remove slot <n> from triggering exercises.
+**GodBod Slash Commands** (`/godbod`)
 
-/godbod clear – Remove all watched slots.
+• `/godbod slot <slot>` — watch slot
+• `/godbod unslot <slot>` — remove slot
+• `/godbod clear` — clear all slots
+• `/godbod watch` — debug slot presses
+• `/godbod chance <0–100>` — trigger chance
+• `/godbod cd <seconds>` — cooldown
+• `/godbod on` / `/godbod off` — enable or disable
+• `/godbod info` — show current settings
 
-/godbod watch – Toggle watch mode to see which slot you press.
+━━━━━━━━━━━━━━━━━━
 
-/godbod chance <0-100> – Set chance for exercises to trigger.
+**Quick Setup**
 
-/godbod cd <seconds> – Set cooldown for exercise messages.
+**RoarGuild**
 
-/godbod on / /godbod off – Enable or disable GodBod reminders.
+1. `/rogu watch`
+2. Press desired action bar slot
+3. `/rogu slot1 <slot>`
+4. `/rogu emote LAUGH`
+5. `/rogu emote1 2`
+6. `/rogu chance1 40`
+7. `/rogu timer1 10`
+8. `/rogu on`
 
-/godbod info – Show all watched slots and current settings.
+**GodBod**
 
-Quick Setup
+1. `/godbod slot <slot>`
+2. `/godbod chance 80`
+3. `/godbod cd 60`
+4. `/godbod on`
 
-RoarGuild:
+━━━━━━━━━━━━━━━━━━
 
-Type /rogu watch and press the action bar slots you want to assign.
+**Design Notes**
+• No polling, no OnUpdate spam
+• Fully event-driven through real gameplay
+• Emotes are data-driven
+• SavedVariables sanitized on load
+• Default state is always safe and minimal
 
-Assign slots to instances using /rogu slotX <n>.
-
-Optionally adjust chance /rogu chanceX 50 and cooldown /rogu timerX 10.
-
-Enable with /rogu on.
-
-GodBod:
-
-Add slots using /godbod slot <n>.
-
-Adjust chance /godbod chance 80 and cooldown /godbod cd 60.
-
-Enable with /godbod on.
-
-Usage: Press the assigned action bar slots in-game to trigger emotes (RoarGuild) or exercises (GodBod).
-
-All settings are saved per character automatically.
+**Characters are not loadouts.**
+**They are stories in motion.**
