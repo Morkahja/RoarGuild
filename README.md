@@ -3,6 +3,7 @@
 **Version:** 1.2
 **Author:** babunigaming
 **Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
+"RoarGuild adds a small, automatic chance for your character to roar during normal play, with optional systems to expand that behavior into a full expression and movement addon."
 
 RoarGuild is a flavor-first action bar addon that makes your character feel alive.
 It triggers emotes and movement-based rituals directly from gameplay—no macros, no rotation pollution.
