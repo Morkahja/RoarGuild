@@ -17,6 +17,9 @@ local LAST_ROAR_TIME = 0
 local LAST_REMINDER_TIME = 0
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
+local LAST_GLOBAL_ROAR_TIME = 0
+local GLOBAL_ROAR_CD = 2
+
 
 local function roarChat(text)
   if DEFAULT_CHAT_FRAME then
@@ -419,6 +422,7 @@ function UseAction(slot, checkCursor, onSelf)
       end
     end
   end
+
 
   if ENABLED and LAST_ROAR_TIME > 0 then
     if now - LAST_ROAR_TIME >= ROAR_REMINDER_INTERVAL
