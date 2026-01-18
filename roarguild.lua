@@ -4,11 +4,8 @@
 -- SavedVariables: ROGUDB, WorkThatGodBodDB
 
 -------------------------------------------------
--- [BLOCK START] RoarGuild (ROGU) / Battle Emote (UPDATED: DB emotes + per-slot emoteIDs + commands)
+-- [BLOCK START] RoarGuild (ROGU) / Battle Emote 
 -------------------------------------------------
-
--- LEGACY (safe to delete later). Not used by RoarGuild logic anymore.
-local EMOTE_TOKENS_BATTLE = { "ROAR","CHEER","FLEX" }
 
 local WATCH_SLOTS = {} -- [instance] = {slot, chance, cd, last, emoteIDs}
 local WATCH_MODE = false
@@ -338,11 +335,7 @@ end
 
 local function outputExercise(text)
   local roll = math.random(1,100)
-  if roll >= 99 then
-    SendChatMessage(text, "CHANNEL", nil, 6)
-  elseif roll >= 97 then
-    SendChatMessage(text, "CHANNEL", nil, 1)
-  elseif roll >= 95 then
+  if roll >= 95 then
     SendChatMessage(text, "PARTY")
   elseif roll >= 93 then
     SendChatMessage(text, "YELL")
