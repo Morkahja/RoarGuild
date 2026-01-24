@@ -1,24 +1,76 @@
--- RoarGuild + GodBod Combined v1.0
+-- RoarGuild v1.3 (GodBod removed)
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
--- SavedVariables: ROGUDB, WorkThatGodBodDB
+-- SavedVariables: ROGUDB
 
 -------------------------------------------------
--- [BLOCK START] RoarGuild (ROGU) / Battle Emote
+-- [0] Constants
 -------------------------------------------------
+local ADDON_VERSION = "1.3"
 
-local WATCH_SLOTS = {} -- [instance] = {slot, chance, cd, last, emoteIDs}
-local WATCH_MODE = false
-local ENABLED = true
-
-local LAST_ROAR_TIME = 0
-local LAST_REMINDER_TIME = 0
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
 
--- Global fallback emote throttle (for the 0.5% chance in UseAction)
-local LAST_GLOBAL_ROAR_TIME = 0
-local GLOBAL_ROAR_CD = 2
+local INVITE_CD = 20
+
+-------------------------------------------------
+-- [1] Shared Utils
+-------------------------------------------------
+local U = {}
+
+function U.trim(s)
+  s = s or ""
+  s = string.gsub(s, "^%s+", "")
+  s = string.gsub(s, "%s+$", "")
+  return s
+end
+
+function U.upper(s)
+  return string.upper(U.trim(s or ""))
+end
+
+function U.split_cmd(raw)
+  local s = U.trim(raw or "")
+  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
+  if not cmd then return "", "" end
+  return cmd, rest or ""
+end
+
+function U.pick(t)
+  local n = table.getn(t or {})
+  if n < 1 then return nil end
+  return t[math.random(1, n)]
+end
+
+function U.arrayHas(t, value)
+  if type(t) ~= "table" then return false end
+  local i = 1
+  while t[i] ~= nil do
+    if t[i] == value then return true end
+    i = i + 1
+  end
+  return false
+end
+
+-------------------------------------------------
+-- [2] RoarGuild (ROGU)
+-------------------------------------------------
+local ROGU = {
+  slots = nil,          -- bound to ROGUDB.slots
+  enabled = true,
+  watchMode = false,
+
+  lastRoar = 0,
+  lastReminder = 0,
+  lastInvite = 0,
+
+  fallback = nil,       -- bound to ROGUDB.fallback (independent)
+  _loaded = false,
+}
+
+-- Independent global fallback (separate from slot instances)
+-- chancePermille: 5 => 0.5%
+local FALLBACK_DEFAULT = { enabled=true, cd=2, chancePermille=5, last=0, emoteIDs={1} }
 
 -- Invite text pool (used by /rogu invite)
 local inviteText = {
@@ -44,52 +96,10 @@ local inviteText = {
   "<ROAR> Adventure feels better when shared. Explore Azeroth with us and let your voice be heard."
 }
 
--- Spam protection for /rogu invite
-local INVITE_CD = 20
-local LAST_INVITE_TIME = 0
-
 local function roarChat(text)
   if DEFAULT_CHAT_FRAME then
-    DEFAULT_CHAT_FRAME:AddMessage("|cffff4444RoarGuild:|r "..text)
+    DEFAULT_CHAT_FRAME:AddMessage("|cffff4444RoarGuild:|r "..tostring(text or ""))
   end
-end
-
-local function roarNormalizeToken(token)
-  token = token or ""
-  token = string.gsub(token, "^%s+", "")
-  token = string.gsub(token, "%s+$", "")
-  token = string.upper(token)
-  return token
-end
-
-local function pick(t)
-  local n = table.getn(t)
-  if n < 1 then return nil end
-  return t[math.random(1,n)]
-end
-
--- Pick one invite line at random
-local function pickInvite()
-  local n = table.getn(inviteText)
-  if n < 1 then return nil end
-  return inviteText[math.random(1, n)]
-end
-
--- Sends invite to /1 and a random global channel 2-10 (spam protected)
-local function sendInvite()
-  local now = GetTime()
-  if (now - (LAST_INVITE_TIME or 0)) < INVITE_CD then
-    local wait = math.ceil(INVITE_CD - (now - LAST_INVITE_TIME))
-    roarChat("invite cooldown: "..tostring(wait).."s")
-    return
-  end
-  LAST_INVITE_TIME = now
-
-  local msg = pickInvite()
-  if not msg or msg == "" then return end
-
-  SendChatMessage(msg, "CHANNEL", nil, 1)
-  SendChatMessage(msg, "CHANNEL", nil, math.random(2, 10))
 end
 
 local function performEmote(token)
@@ -100,15 +110,8 @@ local function performEmote(token)
   end
 end
 
-local function split_cmd(raw)
-  local s = raw or ""
-  s = string.gsub(s, "^%s+", "")
-  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
-  if not cmd then cmd = "" rest = "" end
-  return cmd, rest
-end
-
-local function roarEnsureEmoteDefaults(db)
+-- DB defaults
+local function ROGU_EnsureEmoteDefaults(db)
   if type(db.emotes) ~= "table" then db.emotes = {} end
   if table.getn(db.emotes) < 1 then
     db.emotes[1] = { emote = "ROAR" }
@@ -116,20 +119,188 @@ local function roarEnsureEmoteDefaults(db)
     if type(db.emotes[1]) ~= "table" or type(db.emotes[1].emote) ~= "string" or db.emotes[1].emote == "" then
       db.emotes[1] = { emote = "ROAR" }
     else
-      db.emotes[1].emote = roarNormalizeToken(db.emotes[1].emote)
+      db.emotes[1].emote = U.upper(db.emotes[1].emote)
       if db.emotes[1].emote == "" then db.emotes[1].emote = "ROAR" end
     end
   end
 end
 
-local function roarEnsureDB()
+local function ROGU_EnsureFallbackDefaults(db)
+  if type(db.fallback) ~= "table" then db.fallback = {} end
+  local fb = db.fallback
+
+  if fb.enabled == nil then fb.enabled = FALLBACK_DEFAULT.enabled end
+  if fb.cd == nil then fb.cd = FALLBACK_DEFAULT.cd end
+  if fb.chancePermille == nil then fb.chancePermille = FALLBACK_DEFAULT.chancePermille end
+  if fb.last == nil then fb.last = 0 end
+  if type(fb.emoteIDs) ~= "table" or table.getn(fb.emoteIDs) < 1 then
+    fb.emoteIDs = { 1 }
+  end
+end
+
+local function ROGU_EnsureDB()
   if type(ROGUDB) ~= "table" then ROGUDB = {} end
   if type(ROGUDB.slots) ~= "table" then ROGUDB.slots = {} end
-  roarEnsureEmoteDefaults(ROGUDB)
+  ROGU_EnsureEmoteDefaults(ROGUDB)
+  ROGU_EnsureFallbackDefaults(ROGUDB)
   return ROGUDB
 end
 
-local function reportRestedXP()
+local function ROGU_FindEmoteID(db, token)
+  token = U.upper(token)
+  if token == "" then return nil end
+  local i = 1
+  while db.emotes and db.emotes[i] do
+    local e = db.emotes[i]
+    if type(e) == "table" and type(e.emote) == "string" then
+      if U.upper(e.emote) == token then
+        return i
+      end
+    end
+    i = i + 1
+  end
+  return nil
+end
+
+-- Sanitizes cfg.emoteIDs: keeps only unique numeric ids within [1..#db.emotes], ensures at least {1}.
+local function ROGU_SanitizeEmoteIDs(cfg, db)
+  if type(cfg.emoteIDs) ~= "table" then cfg.emoteIDs = {} end
+
+  local maxID = table.getn(db.emotes or {})
+  if maxID < 1 then
+    ROGU_EnsureEmoteDefaults(db)
+    maxID = table.getn(db.emotes)
+  end
+
+  local out, seen = {}, {}
+  local i = 1
+  while cfg.emoteIDs[i] ~= nil do
+    local id = tonumber(cfg.emoteIDs[i])
+    if id and id >= 1 and id <= maxID and not seen[id] then
+      out[table.getn(out) + 1] = id
+      seen[id] = true
+    end
+    i = i + 1
+  end
+
+  if table.getn(out) < 1 then out[1] = 1 end
+  cfg.emoteIDs = out
+end
+
+-- Picks a random emote token using cfg.emoteIDs -> db.emotes[id].emote, fallback ROAR.
+local function ROGU_PickEmoteForCfg(cfg)
+  local db = ROGU_EnsureDB()
+  local ids = (cfg and cfg.emoteIDs) or nil
+
+  if type(ids) ~= "table" or table.getn(ids) < 1 then
+    ids = { 1 }
+  end
+
+  local id = ids[math.random(1, table.getn(ids))]
+  id = tonumber(id) or 1
+
+  local entry = (db.emotes and db.emotes[id]) or nil
+  local token = (entry and entry.emote) or "ROAR"
+  token = U.upper(token)
+  if token == "" then token = "ROAR" end
+  return token
+end
+
+-- One-time loader: bind runtime vars to DB tables, fill defaults, sanitize emoteIDs.
+local function ROGU_LoadOnce()
+  if ROGU._loaded then return end
+  local db = ROGU_EnsureDB()
+
+  ROGU.slots = db.slots
+  ROGU.fallback = db.fallback
+
+  if db.enabled ~= nil then ROGU.enabled = db.enabled end
+
+  for _, cfg in pairs(ROGU.slots) do
+    if cfg.chance == nil then cfg.chance = 100 end
+    if cfg.cd == nil then cfg.cd = 6 end
+    if cfg.last == nil then cfg.last = 0 end
+    if type(cfg.emoteIDs) ~= "table" or table.getn(cfg.emoteIDs) < 1 then
+      cfg.emoteIDs = { 1 }
+    end
+    ROGU_SanitizeEmoteIDs(cfg, db)
+  end
+
+  ROGU_SanitizeEmoteIDs(ROGU.fallback, db)
+
+  ROGU._loaded = true
+end
+
+-- Invite: ONLY channel 1
+local function ROGU_SendInvite()
+  local now = GetTime()
+  if (now - (ROGU.lastInvite or 0)) < INVITE_CD then
+    local wait = math.ceil(INVITE_CD - (now - ROGU.lastInvite))
+    roarChat("invite cooldown: "..tostring(wait).."s")
+    return
+  end
+  ROGU.lastInvite = now
+
+  local msg = U.pick(inviteText)
+  if not msg or msg == "" then return end
+
+  SendChatMessage(msg, "CHANNEL", nil, 1)
+end
+
+local function ROGU_DoBattleEmoteForCfg(cfg, now)
+  if not ROGU.enabled or not cfg then return end
+
+  cfg.last = cfg.last or 0
+  if now - cfg.last < (cfg.cd or 0) then return end
+  cfg.last = now
+
+  if math.random(1,100) <= (cfg.chance or 0) then
+    local token = ROGU_PickEmoteForCfg(cfg)
+    if token and token ~= "" then
+      performEmote(token)
+      ROGU.lastRoar = now
+    end
+  end
+end
+
+-- Independent fallback: does NOT depend on slot instances; uses its own cooldown/last/chance
+local function ROGU_TryFallback(now, slot)
+  if not ROGU.enabled then return end
+  local fb = ROGU.fallback
+  if type(fb) ~= "table" then return end
+  if fb.enabled == false then return end
+
+  if not slot or slot < 1 or slot > 200 then return end
+
+  fb.last = fb.last or 0
+  if now - fb.last < (fb.cd or 0) then return end
+
+  local perm = tonumber(fb.chancePermille) or 0
+  if perm < 0 then perm = 0 end
+  if perm > 1000 then perm = 1000 end
+
+  if math.random(1,1000) <= perm then
+    local token = ROGU_PickEmoteForCfg(fb)
+    if token and token ~= "" then
+      performEmote(token)
+      ROGU.lastRoar = now
+      fb.last = now
+    end
+  end
+end
+
+local function ROGU_MaybeReminder(now)
+  if not ROGU.enabled then return end
+  if ROGU.lastRoar > 0 then
+    if now - ROGU.lastRoar >= ROAR_REMINDER_INTERVAL
+       and now - (ROGU.lastReminder or 0) >= ROAR_REMINDER_CD then
+      roarChat("You have not roared in a while.")
+      ROGU.lastReminder = now
+    end
+  end
+end
+
+local function ROGU_ReportRestedXP()
   local r = GetXPExhaustion()
   if not r then
     roarChat("No rest.")
@@ -148,388 +319,62 @@ local function reportRestedXP()
   roarChat("Rest: "..bubbles.." bubbles ("..r.." XP)")
 end
 
-local function roarArrayHas(t, value)
-  if type(t) ~= "table" then return false end
-  local i = 1
-  while t[i] ~= nil do
-    if t[i] == value then return true end
-    i = i + 1
-  end
-  return false
-end
-
-local function roarFindEmoteID(db, token)
-  token = roarNormalizeToken(token)
-  if token == "" then return nil end
-  local i = 1
-  while db.emotes and db.emotes[i] do
-    local e = db.emotes[i]
-    if type(e) == "table" and type(e.emote) == "string" then
-      if roarNormalizeToken(e.emote) == token then
-        return i
-      end
-    end
-    i = i + 1
-  end
-  return nil
-end
-
--- Sanitizes cfg.emoteIDs: keeps only unique numeric ids within [1..#db.emotes].
--- Ensures at least {1}.
-local function roarSanitizeEmoteIDs(cfg, db)
-  if type(cfg.emoteIDs) ~= "table" then cfg.emoteIDs = {} end
-
-  local maxID = table.getn(db.emotes or {})
-  if maxID < 1 then
-    roarEnsureEmoteDefaults(db)
-    maxID = table.getn(db.emotes)
-  end
-
-  local out = {}
-  local seen = {}
-  local i = 1
-  while cfg.emoteIDs[i] ~= nil do
-    local id = tonumber(cfg.emoteIDs[i])
-    if id and id >= 1 and id <= maxID then
-      if not seen[id] then
-        out[table.getn(out) + 1] = id
-        seen[id] = true
-      end
-    end
-    i = i + 1
-  end
-
-  if table.getn(out) < 1 then
-    out[1] = 1
-  end
-
-  cfg.emoteIDs = out
-end
-
--- Picks a random emote token for a given slot config, using cfg.emoteIDs -> db.emotes[id].emote.
--- Falls back to emote id 1 (ROAR) if anything is missing/invalid.
-local function roarPickEmoteForCfg(cfg)
-  local db = roarEnsureDB()
-  local ids = (cfg and cfg.emoteIDs) or nil
-
-  if type(ids) ~= "table" or table.getn(ids) < 1 then
-    ids = { 1 }
-  end
-
-  local id = ids[math.random(1, table.getn(ids))]
-  id = tonumber(id) or 1
-
-  local entry = (db.emotes and db.emotes[id]) or nil
-  local token = (entry and entry.emote) or "ROAR"
-  token = roarNormalizeToken(token)
-  if token == "" then token = "ROAR" end
-  return token
-end
-
--- Applies cooldown + chance gating and fires a DB-driven emote for a given slot config.
-local function doBattleEmoteForSlot(cfg)
-  if not ENABLED or not cfg then return end
-
-  local now = GetTime()
-  cfg.last = cfg.last or 0
-
-  if now - cfg.last < (cfg.cd or 0) then return end
-  cfg.last = now
-
-  if math.random(1,100) <= (cfg.chance or 0) then
-    local token = roarPickEmoteForCfg(cfg)
-    if token and token ~= "" then
-      performEmote(token)
-      LAST_ROAR_TIME = now
-    end
-  end
-end
-
-local _roarLoaded = false
-
--- One-time loader: binds runtime variables to DB tables and fills default values.
--- Also sanitizes emoteIDs for every slot against current master emote list.
-local function roarEnsureLoaded()
-  if _roarLoaded then return end
-  local db = roarEnsureDB()
-
-  WATCH_SLOTS = db.slots
-
-  for _, cfg in pairs(WATCH_SLOTS) do
-    if cfg.chance == nil then cfg.chance = 100 end
-    if cfg.cd == nil then cfg.cd = 6 end
-    if cfg.last == nil then cfg.last = 0 end
-    if type(cfg.emoteIDs) ~= "table" or table.getn(cfg.emoteIDs) < 1 then
-      cfg.emoteIDs = { 1 }
-    end
-    roarSanitizeEmoteIDs(cfg, db)
-  end
-
-  if db.enabled ~= nil then ENABLED = db.enabled end
-  _roarLoaded = true
-end
-
 -------------------------------------------------
--- [BLOCK END] RoarGuild (ROGU) / Battle Emote
+-- [3] Hook UseAction (single owner)
 -------------------------------------------------
-
--------------------------------------------------
--- [BLOCK START] GodBod (exercise reminders)
--------------------------------------------------
-
-local EXERCISES = {
-  "Roll your shoulders slowly back ten times. Let the neck float.",
-  "Stand up. Shake out your legs for twenty seconds.",
-  "Look far away. Blink slowly ten times.",
-  "Squeeze your shoulder blades together for five breaths.",
-  "Drink water. Deep breath in, slow breath out.",
-  "Stand tall. Reach both arms overhead like you mean it.",
-  "Rotate your wrists and ankles. Loosen the hinges.",
-  "Turn your head left and right. No forcing.",
-  "Do ten calm bodyweight squats.",
-  "March in place for thirty seconds.",
-  "Open your chest. Hands behind back. Gentle stretch.",
-  "Tighten your core for ten seconds. Release. Repeat.",
-  "Roll your neck in a slow half-circle. No full spins.",
-  "Stand on one leg. Switch after fifteen seconds.",
-  "Shake your hands like you just cast a spell wrong.",
-  "Ten wall or desk push-ups.",
-  "Pull your elbows back like drawing a bow.",
-  "Look up. Look down. Let the eyes reset.",
-  "Flex your glutes for ten seconds. Yes, really.",
-  "Walk around the room for one minute.",
-  "Stretch your calves against the floor or wall.",
-  "Do ten slow arm circles forward, ten back.",
-  "Sit tall. Imagine a string lifting your head.",
-  "Open and close your fists twenty times.",
-  "Take five slow nasal breaths.",
-  "Stand up. Twist gently side to side.",
-  "Do fifteen heel raises.",
-  "Relax your jaw. Tongue off the roof of your mouth.",
-  "Reach one arm up and lean to the side. Switch.",
-  "Shake your shoulders like you’re shrugging off stress.",
-  "Ten seated knee lifts.",
-  "Look away from the screen for thirty seconds.",
-  "Stretch your fingers wide. Hold. Release.",
-  "Do a slow forward fold. Let gravity help.",
-  "Roll your shoulders forward ten times.",
-  "Stand like a proud NPC. Posture check.",
-  "Light jog in place for thirty seconds.",
-  "Stretch your triceps overhead. Switch arms.",
-  "Wiggle your toes. Wake them up.",
-  "Pull your chin slightly back. Long neck.",
-  "Do ten controlled lunges.",
-  "Shake out your whole body for twenty seconds.",
-  "Stretch your forearms by pressing palms together.",
-  "Take a sip of water. Another sip.",
-  "Stand. Sit. Stand again. Repeat five times.",
-  "Gentle spinal twist while seated.",
-  "Raise arms. Inhale. Lower arms. Exhale. Repeat.",
-  "Balance on one leg with eyes closed. Briefly.",
-  "Reset your posture: feet, hips, ribs, head aligned.",
-  "Move with intention for one full minute.",
-  "Slowly tilt your head ear to shoulder. Switch sides.",
-  "Clench fists for five seconds. Release fully.",
-  "Press your feet into the floor. Feel the ground.",
-  "Slide your shoulders up, back, then down.",
-  "Straighten one leg. Flex the foot. Switch.",
-  "Tap your toes rapidly for twenty seconds.",
-  "Gently massage your temples in small circles.",
-  "Interlace fingers. Push palms forward. Stretch upper back.",
-  "Draw slow circles with your nose.",
-  "Stand and stretch one arm across the chest. Switch.",
-  "Lift shoulders to ears. Hold three seconds. Drop.",
-  "Rotate your torso slowly while seated.",
-  "Extend arms out. Make small pulses backward.",
-  "Open your mouth wide. Close gently. Repeat.",
-  "Seated hamstring stretch. One leg at a time.",
-  "Press palms into desk. Straighten arms. Chest stretch.",
-  "Slow ankle circles in both directions.",
-  "March slowly, lifting knees high.",
-  "Rest eyes. Cover them with palms for ten seconds.",
-  "Engage core lightly while breathing normally.",
-  "Seated cat-cow spinal movement.",
-  "Lift heels, then toes, alternating.",
-  "Draw figure eights with your shoulders.",
-  "Stretch one side of neck diagonally. Switch.",
-  "Stand and gently sway side to side.",
-  "Extend arms overhead. Interlace fingers. Reach up.",
-  "Slowly open chest while inhaling.",
-  "Tap fingers to thumb, one by one.",
-  "Straighten spine. Lengthen, don’t stiffen.",
-  "Press knees outward gently while seated.",
-  "Shake out forearms from elbows down.",
-  "Do ten slow seated calf pumps.",
-  "Clasp hands behind head. Elbows wide.",
-  "Deep belly breath for five counts.",
-  "Stretch one quad by bending knee back. Switch.",
-  "Roll feet over imaginary pebbles.",
-  "Lift arms to shoulder height. Hold briefly.",
-  "Turn head diagonally left and right.",
-  "Lightly bounce on the balls of your feet.",
-  "Seated side bend. Switch sides.",
-  "Relax shoulders away from ears.",
-  "Press palms together firmly for five seconds.",
-  "Extend one arm up, one down. Switch.",
-  "Slow controlled sit-back squat.",
-  "Rotate ribcage gently without moving hips.",
-  "Stand tall and breathe into your back.",
-  "Open hands like releasing energy.",
-  "Reset spine from pelvis upward.",
-  "Move joints gently, no force."
-}
-
-local GOD_WATCH_SLOTS = {}
-local GOD_WATCH_MODE = false
-local GOD_LAST_TRIGGER_TIME = 0
-local GOD_COOLDOWN = 60
-local GOD_CHANCE = 100
-local GOD_ENABLED = true
-
-local function godChat(text)
-  if DEFAULT_CHAT_FRAME then
-    DEFAULT_CHAT_FRAME:AddMessage("|cffff8000GodBod:|r "..text)
-  end
-end
-
-local function outputExercise(text)
-  local roll = math.random(1,100)
-  if roll >= 95 then
-    SendChatMessage(text, "PARTY")
-  elseif roll >= 93 then
-    SendChatMessage(text, "YELL")
-  elseif roll >= 91 then
-    SendChatMessage(text, "SAY")
-  elseif roll >= 87 then
-    SendChatMessage(text, "GUILD")
-  else
-    godChat(text)
-  end
-end
-
-local function godEnsureDB()
-  if type(WorkThatGodBodDB) ~= "table" then WorkThatGodBodDB = {} end
-  if type(WorkThatGodBodDB.slots) ~= "table" then WorkThatGodBodDB.slots = {} end
-  return WorkThatGodBodDB
-end
-
-local _godLoaded = false
-local function godEnsureLoaded()
-  if _godLoaded then return end
-  local db = godEnsureDB()
-  GOD_WATCH_SLOTS = db.slots
-  if db.cooldown then GOD_COOLDOWN = db.cooldown end
-  if db.chance then GOD_CHANCE = db.chance end
-  if db.enabled ~= nil then GOD_ENABLED = db.enabled end
-  _godLoaded = true
-end
-
-local function triggerExercise()
-  if not GOD_ENABLED then return end
-  local now = GetTime()
-  if now - GOD_LAST_TRIGGER_TIME < GOD_COOLDOWN then return end
-  GOD_LAST_TRIGGER_TIME = now
-  if math.random(1,100) <= GOD_CHANCE then
-    local msg = pick(EXERCISES)
-    if msg then outputExercise(msg) end
-  end
-end
-
--------------------------------------------------
--- [BLOCK END] GodBod (exercise reminders)
--------------------------------------------------
-
-
--------------------------------------------------
--- [BLOCK START] Hook UseAction (UPDATED: global fallback now DB-driven)
--------------------------------------------------
-
 local _Orig_UseAction = UseAction
 
 function UseAction(slot, checkCursor, onSelf)
-  roarEnsureLoaded()
-  godEnsureLoaded()
+  ROGU_LoadOnce()
 
   local now = GetTime()
 
-  if WATCH_MODE then
+  if ROGU.watchMode then
     roarChat("pressed slot "..tostring(slot))
   end
 
-  for _, cfg in pairs(WATCH_SLOTS) do
+  -- Roar slot instances
+  for _, cfg in pairs(ROGU.slots) do
     if cfg.slot == slot then
-      doBattleEmoteForSlot(cfg)
+      ROGU_DoBattleEmoteForCfg(cfg, now)
     end
   end
 
-  -- Global fallback: 0.5% chance on any action (2s cooldown), uses instance 1 emoteIDs (or {1})
-  if ENABLED and slot and slot >= 1 and slot <= 200 then
-    if (now - (LAST_GLOBAL_ROAR_TIME or 0)) >= GLOBAL_ROAR_CD then
-      if math.random(1,1000) <= 5 then
-        local cfg = WATCH_SLOTS[1]
-        if not cfg then cfg = { emoteIDs = { 1 } } end
-        local token = roarPickEmoteForCfg(cfg)
-        if token and token ~= "" then
-          performEmote(token)
-          LAST_ROAR_TIME = now
-          LAST_GLOBAL_ROAR_TIME = now
-        end
-      end
-    end
-  end
+  -- Independent fallback (always active; independent of instances)
+  ROGU_TryFallback(now, slot)
 
-
-
-  if ENABLED and LAST_ROAR_TIME > 0 then
-    if now - LAST_ROAR_TIME >= ROAR_REMINDER_INTERVAL
-       and now - LAST_REMINDER_TIME >= ROAR_REMINDER_CD then
-      roarChat("You have not roared in a while.")
-      LAST_REMINDER_TIME = now
-    end
-  end
-
-  if GOD_WATCH_MODE then
-    godChat("pressed slot "..tostring(slot))
-  end
-
-  if GOD_WATCH_SLOTS[slot] then
-    triggerExercise()
-  end
+  -- Reminder
+  ROGU_MaybeReminder(now)
 
   return _Orig_UseAction(slot, checkCursor, onSelf)
 end
 
 -------------------------------------------------
--- [BLOCK END] Hook UseAction (UPDATED: global fallback now DB-driven)
+-- [4] Slash Commands: /rogu
 -------------------------------------------------
-
-
--------------------------------------------------
--- [BLOCK START] Slash Commands: /rogu (UPDATED)
--------------------------------------------------
-
 SLASH_ROGU1 = "/rogu"
 SlashCmdList["ROGU"] = function(raw)
-  roarEnsureLoaded()
-  local db = roarEnsureDB()
-  local cmd, rest = split_cmd(raw)
+  ROGU_LoadOnce()
+  local db = ROGU_EnsureDB()
+  local cmd, rest = U.split_cmd(raw)
+  cmd = U.upper(cmd)
 
   -- /rogu invite
-  if cmd == "invite" then
-    sendInvite()
+  if cmd == "INVITE" then
+    ROGU_SendInvite()
     return
   end
 
   -- /rogu emote <TOKEN>
   -- /rogu emote list
-  if cmd == "emote" then
-    local sub = roarNormalizeToken(rest)
+  if cmd == "EMOTE" then
+    local sub = U.upper(rest)
 
     if sub == "LIST" then
       local i = 1
       while db.emotes and db.emotes[i] do
         local token = (type(db.emotes[i]) == "table" and db.emotes[i].emote) or ""
-        token = roarNormalizeToken(token)
+        token = U.upper(token)
         if token == "" then token = "?" end
         roarChat(tostring(i)..": "..token)
         i = i + 1
@@ -537,13 +382,13 @@ SlashCmdList["ROGU"] = function(raw)
       return
     end
 
-    local token = roarNormalizeToken(rest)
+    local token = U.upper(rest)
     if token == "" then
       roarChat("usage: /rogu emote <TOKEN> | /rogu emote list")
       return
     end
 
-    local existing = roarFindEmoteID(db, token)
+    local existing = ROGU_FindEmoteID(db, token)
     if existing then
       roarChat("emote exists: "..tostring(existing)..": "..token)
       return
@@ -553,14 +398,15 @@ SlashCmdList["ROGU"] = function(raw)
     db.emotes[id] = { emote = token }
     roarChat("added emote "..tostring(id)..": "..token)
 
-    for _, cfg in pairs(WATCH_SLOTS) do
-      roarSanitizeEmoteIDs(cfg, db)
+    for _, cfg in pairs(ROGU.slots) do
+      ROGU_SanitizeEmoteIDs(cfg, db)
     end
+    ROGU_SanitizeEmoteIDs(ROGU.fallback, db)
     return
   end
 
   -- /rogu emoteX <id|-id|clear|list>
-  local _, _, emoteIndex = string.find(cmd, "^emote(%d+)$")
+  local _, _, emoteIndex = string.find(cmd, "^EMOTE(%d+)$")
   if emoteIndex then
     local instance = tonumber(emoteIndex)
     if not instance then
@@ -568,12 +414,10 @@ SlashCmdList["ROGU"] = function(raw)
       return
     end
 
-    WATCH_SLOTS[instance] = WATCH_SLOTS[instance] or { slot=nil, chance=100, cd=6, last=0, emoteIDs={1} }
-    local cfg = WATCH_SLOTS[instance]
+    ROGU.slots[instance] = ROGU.slots[instance] or { slot=nil, chance=100, cd=6, last=0, emoteIDs={1} }
+    local cfg = ROGU.slots[instance]
 
-    local arg = string.gsub(rest or "", "^%s+", "")
-    arg = string.gsub(arg, "%s+$", "")
-
+    local arg = U.trim(rest or "")
     if arg == "" then
       roarChat("usage: /rogu emote"..tostring(instance).." <id|-id|clear|list>")
       return
@@ -586,14 +430,14 @@ SlashCmdList["ROGU"] = function(raw)
     end
 
     if string.lower(arg) == "list" then
-      roarSanitizeEmoteIDs(cfg, db)
+      ROGU_SanitizeEmoteIDs(cfg, db)
       local out = ""
       local i = 1
       while cfg.emoteIDs[i] do
         local id = cfg.emoteIDs[i]
         local token = (db.emotes[id] and db.emotes[id].emote) or "ROAR"
         if out ~= "" then out = out.." | " end
-        out = out..tostring(id)..":"..roarNormalizeToken(token)
+        out = out..tostring(id)..":"..U.upper(token)
         i = i + 1
       end
       roarChat("instance"..tostring(instance).." emotes: "..out)
@@ -601,10 +445,9 @@ SlashCmdList["ROGU"] = function(raw)
     end
 
     local remove = false
-    if string.sub(arg,1,1) == "-" then
+    if string.sub(arg, 1, 1) == "-" then
       remove = true
-      arg = string.sub(arg,2)
-      arg = string.gsub(arg, "^%s+", "")
+      arg = U.trim(string.sub(arg, 2))
     end
 
     local id = tonumber(arg)
@@ -614,7 +457,7 @@ SlashCmdList["ROGU"] = function(raw)
       return
     end
 
-    roarSanitizeEmoteIDs(cfg, db)
+    ROGU_SanitizeEmoteIDs(cfg, db)
 
     if remove then
       local new = {}
@@ -623,11 +466,11 @@ SlashCmdList["ROGU"] = function(raw)
           new[table.getn(new)+1] = cfg.emoteIDs[i]
         end
       end
-      if table.getn(new) < 1 then new[1]=1 end
+      if table.getn(new) < 1 then new[1] = 1 end
       cfg.emoteIDs = new
       roarChat("instance"..tostring(instance).." removed emote id "..tostring(id))
     else
-      if roarArrayHas(cfg.emoteIDs, id) then
+      if U.arrayHas(cfg.emoteIDs, id) then
         roarChat("instance"..tostring(instance).." already has emote id "..tostring(id))
       else
         cfg.emoteIDs[table.getn(cfg.emoteIDs)+1] = id
@@ -638,17 +481,17 @@ SlashCmdList["ROGU"] = function(raw)
   end
 
   -- /rogu slotX <slot>
-  local _, _, slotIndex = string.find(cmd, "^slot(%d+)$")
+  local _, _, slotIndex = string.find(cmd, "^SLOT(%d+)$")
   if slotIndex then
     local instance = tonumber(slotIndex)
     local slot = tonumber(rest)
     if instance and slot then
-      WATCH_SLOTS[instance] = WATCH_SLOTS[instance] or { emoteIDs={1} }
-      WATCH_SLOTS[instance].slot = slot
-      WATCH_SLOTS[instance].chance = WATCH_SLOTS[instance].chance or 100
-      WATCH_SLOTS[instance].cd = WATCH_SLOTS[instance].cd or 6
-      WATCH_SLOTS[instance].last = 0
-      roarSanitizeEmoteIDs(WATCH_SLOTS[instance], db)
+      ROGU.slots[instance] = ROGU.slots[instance] or { emoteIDs={1} }
+      ROGU.slots[instance].slot = slot
+      ROGU.slots[instance].chance = ROGU.slots[instance].chance or 100
+      ROGU.slots[instance].cd = ROGU.slots[instance].cd or 6
+      ROGU.slots[instance].last = 0
+      ROGU_SanitizeEmoteIDs(ROGU.slots[instance], db)
       roarChat("instance"..tostring(instance).." watching slot "..tostring(slot))
     else
       roarChat("usage: /rogu slotX <slot>")
@@ -657,12 +500,12 @@ SlashCmdList["ROGU"] = function(raw)
   end
 
   -- /rogu chanceX <0-100>
-  local _, _, chanceIndex = string.find(cmd, "^chance(%d+)$")
+  local _, _, chanceIndex = string.find(cmd, "^CHANCE(%d+)$")
   if chanceIndex then
     local instance = tonumber(chanceIndex)
     local n = tonumber(rest)
-    if WATCH_SLOTS[instance] and n and n>=0 and n<=100 then
-      WATCH_SLOTS[instance].chance = n
+    if ROGU.slots[instance] and n and n>=0 and n<=100 then
+      ROGU.slots[instance].chance = n
       roarChat("instance"..tostring(instance).." chance "..tostring(n).."%")
     else
       roarChat("invalid instance or value")
@@ -671,12 +514,12 @@ SlashCmdList["ROGU"] = function(raw)
   end
 
   -- /rogu timerX <sec>
-  local _, _, timerIndex = string.find(cmd, "^timer(%d+)$")
+  local _, _, timerIndex = string.find(cmd, "^TIMER(%d+)$")
   if timerIndex then
     local instance = tonumber(timerIndex)
     local n = tonumber(rest)
-    if WATCH_SLOTS[instance] and n and n>=0 then
-      WATCH_SLOTS[instance].cd = n
+    if ROGU.slots[instance] and n and n>=0 then
+      ROGU.slots[instance].cd = n
       roarChat("instance"..tostring(instance).." cooldown "..tostring(n).."s")
     else
       roarChat("invalid instance or value")
@@ -684,24 +527,39 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  if cmd == "watch" then
-    WATCH_MODE = not WATCH_MODE
-    roarChat("watch mode "..(WATCH_MODE and "ON" or "OFF"))
+  if cmd == "WATCH" then
+    ROGU.watchMode = not ROGU.watchMode
+    roarChat("watch mode "..(ROGU.watchMode and "ON" or "OFF"))
     return
   end
 
-  if cmd == "reset" then
-    WATCH_SLOTS = {}
-    roarEnsureDB().slots = WATCH_SLOTS
+  if cmd == "RESET" then
+    ROGU.slots = {}
+    ROGU_EnsureDB().slots = ROGU.slots
     roarChat("all instances cleared")
     return
   end
 
-  if cmd == "info" then
-    roarChat("enabled: "..tostring(ENABLED))
+  if cmd == "INFO" then
+    roarChat("enabled: "..tostring(ROGU.enabled))
     roarChat("emotes in DB: "..tostring(table.getn(db.emotes)))
-    for i,cfg in pairs(WATCH_SLOTS) do
-      roarSanitizeEmoteIDs(cfg, db)
+
+    if type(ROGU.fallback) == "table" then
+      local fb = ROGU.fallback
+      ROGU_SanitizeEmoteIDs(fb, db)
+      local fbids = ""
+      local k=1
+      while fb.emoteIDs and fb.emoteIDs[k] do
+        if fbids ~= "" then fbids = fbids.."," end
+        fbids = fbids..tostring(fb.emoteIDs[k])
+        k = k + 1
+      end
+      if fbids == "" then fbids = "1" end
+      roarChat("fallback: enabled "..tostring(fb.enabled).." | cd "..tostring(fb.cd).."s | chance "..tostring(fb.chancePermille).."/1000 | emotes ["..fbids.."]")
+    end
+
+    for i,cfg in pairs(ROGU.slots) do
+      ROGU_SanitizeEmoteIDs(cfg, db)
       local ids = ""
       for k=1,table.getn(cfg.emoteIDs or {}) do
         if ids ~= "" then ids = ids.."," end
@@ -713,14 +571,14 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  if cmd == "on" then ENABLED=true; roarChat("enabled"); return end
-  if cmd == "off" then ENABLED=false; roarChat("disabled"); return end
-  if cmd == "rexp" then reportRestedXP(); return end
+  if cmd == "ON" then ROGU.enabled=true; db.enabled=true; roarChat("enabled"); return end
+  if cmd == "OFF" then ROGU.enabled=false; db.enabled=false; roarChat("disabled"); return end
+  if cmd == "REXP" then ROGU_ReportRestedXP(); return end
 
-  if cmd == "roar" then
-    local cfg = WATCH_SLOTS[1] or { emoteIDs={1} }
-    performEmote(roarPickEmoteForCfg(cfg))
-    LAST_ROAR_TIME = GetTime()
+  if cmd == "ROAR" then
+    local token = ROGU_PickEmoteForCfg(ROGU.slots[1] or { emoteIDs={1} })
+    performEmote(token)
+    ROGU.lastRoar = GetTime()
     return
   end
 
@@ -728,111 +586,20 @@ SlashCmdList["ROGU"] = function(raw)
 end
 
 -------------------------------------------------
--- [BLOCK END] Slash Commands: /rogu (UPDATED)
+-- [5] Init / Save (login + logout persistence)
 -------------------------------------------------
-
--------------------------------------------------
--- [BLOCK START] Slash Commands: /godbod
--------------------------------------------------
-
-SLASH_GODBOD1 = "/godbod"
-SlashCmdList["GODBOD"] = function(raw)
-  godEnsureLoaded()
-  local cmd, rest = split_cmd(raw)
-
-  if cmd == "slot" then
-    local n = tonumber(rest)
-    if n and n>=1 then
-      GOD_WATCH_SLOTS[n] = true
-      godChat("watching slot "..tostring(n))
-    else
-      godChat("usage: /godbod slot <n>")
-    end
-    return
-  elseif cmd == "unslot" then
-    local n = tonumber(rest)
-    if n then
-      GOD_WATCH_SLOTS[n] = nil
-      godChat("removed slot "..tostring(n))
-    else
-      godChat("usage: /godbod unslot <n>")
-    end
-    return
-  elseif cmd == "clear" then
-    GOD_WATCH_SLOTS = {}
-    godEnsureDB().slots = GOD_WATCH_SLOTS
-    godChat("all slots cleared")
-    return
-  elseif cmd == "watch" then
-    GOD_WATCH_MODE = not GOD_WATCH_MODE
-    godChat("watch mode "..(GOD_WATCH_MODE and "ON" or "OFF"))
-    return
-  elseif cmd == "chance" then
-    local n = tonumber(rest)
-    if n and n>=0 and n<=100 then
-      GOD_CHANCE = n
-      godEnsureDB().chance = n
-      godChat("trigger chance set to "..tostring(n).."%")
-    end
-    return
-  elseif cmd == "cd" then
-    local n = tonumber(rest)
-    if n and n>=0 then
-      GOD_COOLDOWN = n
-      godEnsureDB().cooldown = n
-      godChat("cooldown set to "..tostring(n).."s")
-    end
-    return
-  elseif cmd == "on" then
-    GOD_ENABLED = true
-    godEnsureDB().enabled = true
-    godChat("enabled.")
-    return
-  elseif cmd == "off" then
-    GOD_ENABLED = false
-    godEnsureDB().enabled = false
-    godChat("disabled.")
-    return
-  elseif cmd == "info" then
-    local count=0
-    for _ in pairs(GOD_WATCH_SLOTS) do count=count+1 end
-    godChat("slots watched: "..tostring(count).." | chance: "..tostring(GOD_CHANCE).."% | cooldown: "..tostring(GOD_COOLDOWN).."s | enabled: "..tostring(GOD_ENABLED))
-    return
-  end
-
-  godChat("/godbod slot <n> | unslot <n> | clear | watch | chance <0-100> | cd <s> | on | off | info")
-end
-
--------------------------------------------------
--- [BLOCK END] Slash Commands: /godbod
--------------------------------------------------
-
-
--------------------------------------------------
--- [BLOCK START] Init / Save (login + logout persistence)
--------------------------------------------------
-
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("PLAYER_LOGOUT")
 
 f:SetScript("OnEvent", function(_, event)
-  if event=="PLAYER_LOGIN" then
-    math.randomseed(math.floor(GetTime()*1000))
+  if event == "PLAYER_LOGIN" then
+    math.randomseed(math.floor(GetTime() * 1000))
     math.random()
-  elseif event=="PLAYER_LOGOUT" then
-    local db = roarEnsureDB()
-    db.slots = WATCH_SLOTS
-    db.enabled = ENABLED
-
-    local goddb = godEnsureDB()
-    goddb.slots = GOD_WATCH_SLOTS
-    goddb.cooldown = GOD_COOLDOWN
-    goddb.chance = GOD_CHANCE
-    goddb.enabled = GOD_ENABLED
+  elseif event == "PLAYER_LOGOUT" then
+    local db = ROGU_EnsureDB()
+    db.slots = ROGU.slots
+    db.enabled = ROGU.enabled
+    db.fallback = ROGU.fallback
   end
 end)
-
--------------------------------------------------
--- [BLOCK END] Init / Save (login + logout persistence)
--------------------------------------------------
