@@ -1,4 +1,3 @@
-```lua
 -- RoarGuild v1.3 (GodBod removed, Option C profiles)
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
@@ -668,4 +667,4 @@ f:SetScript("OnEvent", function(_, event)
     profile.fallback = ROGU.fallback
   end
 end)
-```
+
