@@ -1,4 +1,5 @@
--- RoarGuild v1.3
+```lua
+-- RoarGuild v1.3 (GodBod removed, Option C profiles)
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
 -- SavedVariables: ROGUDB
@@ -10,8 +11,11 @@ local ADDON_VERSION = "1.3"
 
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
-
 local INVITE_CD = 20
+
+-- Independent global fallback defaults (per-profile)
+-- chancePermille: 5 => 0.5%
+local FALLBACK_DEFAULT = { enabled=true, cd=2, chancePermille=5, last=0, emoteIDs={1} }
 
 -------------------------------------------------
 -- [1] Shared Utils
@@ -53,42 +57,42 @@ function U.arrayHas(t, value)
 end
 
 -------------------------------------------------
--- [2] RoarGuild (ROGU)
+-- [2] RoarGuild (ROGU) State
 -------------------------------------------------
 local ROGU = {
-  slots = nil,          -- bound to ROGUDB.slots
-  enabled = true,
+  profileKey = nil,
+  profile = nil,        -- bound to ROGUDB.profiles[key]
+  slots = nil,          -- bound to profile.slots
+  fallback = nil,       -- bound to profile.fallback
+  enabled = true,       -- from profile.enabled
   watchMode = false,
 
   lastRoar = 0,
   lastReminder = 0,
   lastInvite = 0,
 
-  fallback = nil,       -- bound to ROGUDB.fallback (independent)
   _loaded = false,
 }
 
--- Independent global fallback (separate from slot instances)
--- chancePermille: 5 => 0.5%
-local FALLBACK_DEFAULT = { enabled=true, cd=2, chancePermille=5, last=0, emoteIDs={1} }
-
--- Invite text pool (used by /rogu invite)
+-------------------------------------------------
+-- [2.1] Data Pools
+-------------------------------------------------
 local inviteText = {
-  "<ROAR> A friendly guild for joy, curiosity, and shared adventures. We explore Azeroth together and roar at the good moments. You’re welcome to join us.",
-  "<ROAR> Hear that? That’s Azeroth calling. We quest, wander, laugh, and /roar! Join us!",
+  "<ROAR> A friendly guild for joy, curiosity, and shared adventures. We explore Azeroth at our own pace and roar at the good moments. You’re welcome to join us.",
+  "<ROAR> Hear that? That’s Azeroth calling. We quest, wander, laugh, and /roar at victories big and small. Come roar with us!",
   "<ROAR> A band of joyful explorers roaming Azeroth for stories, treasure, and good times. No rush, no pressure, just adventure and loud roars.",
   "<ROAR> The pride gathers! We celebrate level-ups, loot, sunsets, and silly moments with a good /roar. Casual adventures, big hearts. All welcome.",
-  "<ROAR> Casual adventurers, loud celebrations, shared stories. If you like exploring and roaring, you belong here.",
+  "<ROAR> Casual adventurers, loud celebrations, shared stories. If you like exploring Azeroth and roaring at life, you belong here.",
   "<ROAR> A guild for joy, curiosity, and shared stories. Quest, dungeon, PvP, RP, collect, and wander together. Play to inspire, not to impress.",
-  "<ROAR> Do you play for the world, not the meter? For stories, curiosity, and good vibes? We explore Azeroth together, join us!",
+  "<ROAR> Do you play for the world, not the meter? For stories, curiosity, and good vibes? We explore Azeroth together at our own pace.",
   "<ROAR> We play to inspire, not to impress. A home for curious souls, shared adventures, and good energy across Azeroth.",
   "<ROAR> Curious explorers and joyful wanderers wanted. We value respect, creativity, and shared stories. Let Azeroth hear your roar.",
-  "<ROAR> Playing for curiosity, respect, and shared stories? So are we. Join us!",
+  "<ROAR> Playing for curiosity, respect, and shared stories? So are we. Explore Azeroth together. Roar together.",
   "<ROAR> Not in a hurry? Good. We wander, explore, and celebrate the journey with loud roars and good company.",
   "<ROAR> A casual guild for people who still enjoy getting lost in Azeroth. Stories, adventures, and plenty of /roar.",
   "<ROAR> We chase moments, not meters. Quests, dungeons, wandering, laughter, and roaring along the way.",
   "<ROAR> Join a pride that values curiosity, kindness, and shared adventures over rushing to the finish line.",
-  "<ROAR> Azeroth is a world, not a checklist. Come explore it with us!",
+  "<ROAR> Azeroth is a world, not a checklist. Come explore it with us and roar when something great happens.",
   "<ROAR> From quiet wandering to loud celebrations, we enjoy every part of the journey together.",
   "<ROAR> A home for explorers, storytellers, collectors, fighters, and friendly souls. We also roar a lot.",
   "<ROAR> If you enjoy playing at your own pace and sharing the adventure, ROAR might be your new home.",
@@ -96,6 +100,9 @@ local inviteText = {
   "<ROAR> Adventure feels better when shared. Explore Azeroth with us and let your voice be heard."
 }
 
+-------------------------------------------------
+-- [2.2] Chat + Emote
+-------------------------------------------------
 local function roarChat(text)
   if DEFAULT_CHAT_FRAME then
     DEFAULT_CHAT_FRAME:AddMessage("|cffff4444RoarGuild:|r "..tostring(text or ""))
@@ -110,42 +117,97 @@ local function performEmote(token)
   end
 end
 
--- DB defaults
+-------------------------------------------------
+-- [2.3] Profiles (Option C)
+-------------------------------------------------
+local function ROGU_ProfileKey()
+  local name = UnitName("player") or "Unknown"
+  local realm = (GetRealmName and GetRealmName()) or ""
+  if realm == "" then return name end
+  return name .. "-" .. realm
+end
+
+-- Shared (account-wide) master emote list defaults
 local function ROGU_EnsureEmoteDefaults(db)
   if type(db.emotes) ~= "table" then db.emotes = {} end
   if table.getn(db.emotes) < 1 then
     db.emotes[1] = { emote = "ROAR" }
+    return
+  end
+
+  if type(db.emotes[1]) ~= "table" or type(db.emotes[1].emote) ~= "string" or db.emotes[1].emote == "" then
+    db.emotes[1] = { emote = "ROAR" }
   else
-    if type(db.emotes[1]) ~= "table" or type(db.emotes[1].emote) ~= "string" or db.emotes[1].emote == "" then
-      db.emotes[1] = { emote = "ROAR" }
-    else
-      db.emotes[1].emote = U.upper(db.emotes[1].emote)
-      if db.emotes[1].emote == "" then db.emotes[1].emote = "ROAR" end
-    end
+    db.emotes[1].emote = U.upper(db.emotes[1].emote)
+    if db.emotes[1].emote == "" then db.emotes[1].emote = "ROAR" end
   end
 end
 
-local function ROGU_EnsureFallbackDefaults(db)
-  if type(db.fallback) ~= "table" then db.fallback = {} end
-  local fb = db.fallback
-
-  if fb.enabled == nil then fb.enabled = FALLBACK_DEFAULT.enabled end
-  if fb.cd == nil then fb.cd = FALLBACK_DEFAULT.cd end
-  if fb.chancePermille == nil then fb.chancePermille = FALLBACK_DEFAULT.chancePermille end
-  if fb.last == nil then fb.last = 0 end
-  if type(fb.emoteIDs) ~= "table" or table.getn(fb.emoteIDs) < 1 then
-    fb.emoteIDs = { 1 }
+local function ROGU_EnsureFallbackDefaultsOn(tbl)
+  if type(tbl) ~= "table" then return end
+  if tbl.enabled == nil then tbl.enabled = FALLBACK_DEFAULT.enabled end
+  if tbl.cd == nil then tbl.cd = FALLBACK_DEFAULT.cd end
+  if tbl.chancePermille == nil then tbl.chancePermille = FALLBACK_DEFAULT.chancePermille end
+  if tbl.last == nil then tbl.last = 0 end
+  if type(tbl.emoteIDs) ~= "table" or table.getn(tbl.emoteIDs) < 1 then
+    tbl.emoteIDs = { 1 }
   end
 end
 
 local function ROGU_EnsureDB()
   if type(ROGUDB) ~= "table" then ROGUDB = {} end
-  if type(ROGUDB.slots) ~= "table" then ROGUDB.slots = {} end
+  if type(ROGUDB.profiles) ~= "table" then ROGUDB.profiles = {} end
   ROGU_EnsureEmoteDefaults(ROGUDB)
-  ROGU_EnsureFallbackDefaults(ROGUDB)
   return ROGUDB
 end
 
+-- One-time migration from legacy root fields (older versions) into this character profile
+local function ROGU_MigrateLegacyRootToProfile(db, p)
+  if p._migrated == true then return end
+
+  -- Legacy: db.slots, db.enabled, db.fallback (root)
+  if type(db.slots) == "table" and type(p.slots) == "table" and next(p.slots) == nil then
+    p.slots = db.slots
+  end
+
+  if db.enabled ~= nil and p.enabled == true then
+    p.enabled = db.enabled
+  end
+
+  if type(db.fallback) == "table" then
+    p.fallback = db.fallback
+    ROGU_EnsureFallbackDefaultsOn(p.fallback)
+  end
+
+  -- Clear legacy roots to avoid two sources of truth
+  db.slots = nil
+  db.enabled = nil
+  db.fallback = nil
+
+  p._migrated = true
+end
+
+local function ROGU_EnsureProfile(db)
+  local key = ROGU_ProfileKey()
+  local p = db.profiles[key]
+  if type(p) ~= "table" then
+    p = {}
+    db.profiles[key] = p
+  end
+
+  if p.enabled == nil then p.enabled = true end
+  if type(p.slots) ~= "table" then p.slots = {} end
+  if type(p.fallback) ~= "table" then p.fallback = {} end
+  ROGU_EnsureFallbackDefaultsOn(p.fallback)
+
+  ROGU_MigrateLegacyRootToProfile(db, p)
+
+  return p, key
+end
+
+-------------------------------------------------
+-- [2.4] Emote IDs sanitize + pick
+-------------------------------------------------
 local function ROGU_FindEmoteID(db, token)
   token = U.upper(token)
   if token == "" then return nil end
@@ -162,7 +224,7 @@ local function ROGU_FindEmoteID(db, token)
   return nil
 end
 
--- Sanitizes cfg.emoteIDs: keeps only unique numeric ids within [1..#db.emotes], ensures at least {1}.
+-- keeps only unique numeric ids within [1..#db.emotes], ensures at least {1}
 local function ROGU_SanitizeEmoteIDs(cfg, db)
   if type(cfg.emoteIDs) ~= "table" then cfg.emoteIDs = {} end
 
@@ -187,18 +249,12 @@ local function ROGU_SanitizeEmoteIDs(cfg, db)
   cfg.emoteIDs = out
 end
 
--- Picks a random emote token using cfg.emoteIDs -> db.emotes[id].emote, fallback ROAR.
 local function ROGU_PickEmoteForCfg(cfg)
   local db = ROGU_EnsureDB()
   local ids = (cfg and cfg.emoteIDs) or nil
+  if type(ids) ~= "table" or table.getn(ids) < 1 then ids = { 1 } end
 
-  if type(ids) ~= "table" or table.getn(ids) < 1 then
-    ids = { 1 }
-  end
-
-  local id = ids[math.random(1, table.getn(ids))]
-  id = tonumber(id) or 1
-
+  local id = tonumber(ids[math.random(1, table.getn(ids))]) or 1
   local entry = (db.emotes and db.emotes[id]) or nil
   local token = (entry and entry.emote) or "ROAR"
   token = U.upper(token)
@@ -206,23 +262,25 @@ local function ROGU_PickEmoteForCfg(cfg)
   return token
 end
 
--- One-time loader: bind runtime vars to DB tables, fill defaults, sanitize emoteIDs.
+-------------------------------------------------
+-- [2.5] Load Once (bind runtime to current profile)
+-------------------------------------------------
 local function ROGU_LoadOnce()
   if ROGU._loaded then return end
   local db = ROGU_EnsureDB()
+  local profile, key = ROGU_EnsureProfile(db)
 
-  ROGU.slots = db.slots
-  ROGU.fallback = db.fallback
-
-  if db.enabled ~= nil then ROGU.enabled = db.enabled end
+  ROGU.profileKey = key
+  ROGU.profile = profile
+  ROGU.slots = profile.slots
+  ROGU.fallback = profile.fallback
+  ROGU.enabled = profile.enabled
 
   for _, cfg in pairs(ROGU.slots) do
     if cfg.chance == nil then cfg.chance = 100 end
     if cfg.cd == nil then cfg.cd = 6 end
     if cfg.last == nil then cfg.last = 0 end
-    if type(cfg.emoteIDs) ~= "table" or table.getn(cfg.emoteIDs) < 1 then
-      cfg.emoteIDs = { 1 }
-    end
+    if type(cfg.emoteIDs) ~= "table" or table.getn(cfg.emoteIDs) < 1 then cfg.emoteIDs = { 1 } end
     ROGU_SanitizeEmoteIDs(cfg, db)
   end
 
@@ -231,7 +289,9 @@ local function ROGU_LoadOnce()
   ROGU._loaded = true
 end
 
--- Invite: ONLY channel 1
+-------------------------------------------------
+-- [2.6] Features
+-------------------------------------------------
 local function ROGU_SendInvite()
   local now = GetTime()
   if (now - (ROGU.lastInvite or 0)) < INVITE_CD then
@@ -244,6 +304,7 @@ local function ROGU_SendInvite()
   local msg = U.pick(inviteText)
   if not msg or msg == "" then return end
 
+  -- ONLY channel 1
   SendChatMessage(msg, "CHANNEL", nil, 1)
 end
 
@@ -256,20 +317,16 @@ local function ROGU_DoBattleEmoteForCfg(cfg, now)
 
   if math.random(1,100) <= (cfg.chance or 0) then
     local token = ROGU_PickEmoteForCfg(cfg)
-    if token and token ~= "" then
-      performEmote(token)
-      ROGU.lastRoar = now
-    end
+    performEmote(token)
+    ROGU.lastRoar = now
   end
 end
 
--- Independent fallback: does NOT depend on slot instances; uses its own cooldown/last/chance
 local function ROGU_TryFallback(now, slot)
   if not ROGU.enabled then return end
   local fb = ROGU.fallback
   if type(fb) ~= "table" then return end
   if fb.enabled == false then return end
-
   if not slot or slot < 1 or slot > 200 then return end
 
   fb.last = fb.last or 0
@@ -281,11 +338,9 @@ local function ROGU_TryFallback(now, slot)
 
   if math.random(1,1000) <= perm then
     local token = ROGU_PickEmoteForCfg(fb)
-    if token and token ~= "" then
-      performEmote(token)
-      ROGU.lastRoar = now
-      fb.last = now
-    end
+    performEmote(token)
+    ROGU.lastRoar = now
+    fb.last = now
   end
 end
 
@@ -302,16 +357,10 @@ end
 
 local function ROGU_ReportRestedXP()
   local r = GetXPExhaustion()
-  if not r then
-    roarChat("No rest.")
-    return
-  end
+  if not r then roarChat("No rest."); return end
 
   local m = UnitXPMax("player")
-  if not m or m == 0 then
-    roarChat("No XP data.")
-    return
-  end
+  if not m or m == 0 then roarChat("No XP data."); return end
 
   local bubbles = math.floor((r * 20) / m + 0.5)
   if bubbles > 30 then bubbles = 30 end
@@ -320,27 +369,25 @@ local function ROGU_ReportRestedXP()
 end
 
 -------------------------------------------------
--- [3] Hook UseAction (single owner)
+-- [3] Hook UseAction
 -------------------------------------------------
 local _Orig_UseAction = UseAction
 
 function UseAction(slot, checkCursor, onSelf)
   ROGU_LoadOnce()
-
   local now = GetTime()
 
   if ROGU.watchMode then
     roarChat("pressed slot "..tostring(slot))
   end
 
-  -- Roar slot instances
   for _, cfg in pairs(ROGU.slots) do
     if cfg.slot == slot then
       ROGU_DoBattleEmoteForCfg(cfg, now)
     end
   end
 
-  -- Independent fallback (always active; independent of instances)
+  -- Always-active independent fallback
   ROGU_TryFallback(now, slot)
 
   -- Reminder
@@ -356,17 +403,16 @@ SLASH_ROGU1 = "/rogu"
 SlashCmdList["ROGU"] = function(raw)
   ROGU_LoadOnce()
   local db = ROGU_EnsureDB()
+
   local cmd, rest = U.split_cmd(raw)
   cmd = U.upper(cmd)
 
-  -- /rogu invite
   if cmd == "INVITE" then
     ROGU_SendInvite()
     return
   end
 
-  -- /rogu emote <TOKEN>
-  -- /rogu emote list
+  -- /rogu emote <TOKEN> | /rogu emote list
   if cmd == "EMOTE" then
     local sub = U.upper(rest)
 
@@ -409,15 +455,12 @@ SlashCmdList["ROGU"] = function(raw)
   local _, _, emoteIndex = string.find(cmd, "^EMOTE(%d+)$")
   if emoteIndex then
     local instance = tonumber(emoteIndex)
-    if not instance then
-      roarChat("invalid instance")
-      return
-    end
+    if not instance then roarChat("invalid instance"); return end
 
     ROGU.slots[instance] = ROGU.slots[instance] or { slot=nil, chance=100, cd=6, last=0, emoteIDs={1} }
     local cfg = ROGU.slots[instance]
-
     local arg = U.trim(rest or "")
+
     if arg == "" then
       roarChat("usage: /rogu emote"..tostring(instance).." <id|-id|clear|list>")
       return
@@ -435,9 +478,9 @@ SlashCmdList["ROGU"] = function(raw)
       local i = 1
       while cfg.emoteIDs[i] do
         local id = cfg.emoteIDs[i]
-        local token = (db.emotes[id] and db.emotes[id].emote) or "ROAR"
+        local tok = (db.emotes[id] and db.emotes[id].emote) or "ROAR"
         if out ~= "" then out = out.." | " end
-        out = out..tostring(id)..":"..U.upper(token)
+        out = out..tostring(id)..":"..U.upper(tok)
         i = i + 1
       end
       roarChat("instance"..tostring(instance).." emotes: "..out)
@@ -487,11 +530,12 @@ SlashCmdList["ROGU"] = function(raw)
     local slot = tonumber(rest)
     if instance and slot then
       ROGU.slots[instance] = ROGU.slots[instance] or { emoteIDs={1} }
-      ROGU.slots[instance].slot = slot
-      ROGU.slots[instance].chance = ROGU.slots[instance].chance or 100
-      ROGU.slots[instance].cd = ROGU.slots[instance].cd or 6
-      ROGU.slots[instance].last = 0
-      ROGU_SanitizeEmoteIDs(ROGU.slots[instance], db)
+      local cfg = ROGU.slots[instance]
+      cfg.slot = slot
+      cfg.chance = cfg.chance or 100
+      cfg.cd = cfg.cd or 6
+      cfg.last = 0
+      ROGU_SanitizeEmoteIDs(cfg, db)
       roarChat("instance"..tostring(instance).." watching slot "..tostring(slot))
     else
       roarChat("usage: /rogu slotX <slot>")
@@ -535,12 +579,14 @@ SlashCmdList["ROGU"] = function(raw)
 
   if cmd == "RESET" then
     ROGU.slots = {}
-    ROGU_EnsureDB().slots = ROGU.slots
+    if ROGU.profile then ROGU.profile.slots = ROGU.slots end
     roarChat("all instances cleared")
     return
   end
 
   if cmd == "INFO" then
+    roarChat("version: "..ADDON_VERSION)
+    roarChat("profile: "..tostring(ROGU.profileKey or "?"))
     roarChat("enabled: "..tostring(ROGU.enabled))
     roarChat("emotes in DB: "..tostring(table.getn(db.emotes)))
 
@@ -548,7 +594,7 @@ SlashCmdList["ROGU"] = function(raw)
       local fb = ROGU.fallback
       ROGU_SanitizeEmoteIDs(fb, db)
       local fbids = ""
-      local k=1
+      local k = 1
       while fb.emoteIDs and fb.emoteIDs[k] do
         if fbids ~= "" then fbids = fbids.."," end
         fbids = fbids..tostring(fb.emoteIDs[k])
@@ -571,9 +617,24 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  if cmd == "ON" then ROGU.enabled=true; db.enabled=true; roarChat("enabled"); return end
-  if cmd == "OFF" then ROGU.enabled=false; db.enabled=false; roarChat("disabled"); return end
-  if cmd == "REXP" then ROGU_ReportRestedXP(); return end
+  if cmd == "ON" then
+    ROGU.enabled = true
+    if ROGU.profile then ROGU.profile.enabled = true end
+    roarChat("enabled")
+    return
+  end
+
+  if cmd == "OFF" then
+    ROGU.enabled = false
+    if ROGU.profile then ROGU.profile.enabled = false end
+    roarChat("disabled")
+    return
+  end
+
+  if cmd == "REXP" then
+    ROGU_ReportRestedXP()
+    return
+  end
 
   if cmd == "ROAR" then
     local token = ROGU_PickEmoteForCfg(ROGU.slots[1] or { emoteIDs={1} })
@@ -586,7 +647,7 @@ SlashCmdList["ROGU"] = function(raw)
 end
 
 -------------------------------------------------
--- [5] Init / Save (login + logout persistence)
+-- [5] Init / Save
 -------------------------------------------------
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
@@ -596,10 +657,15 @@ f:SetScript("OnEvent", function(_, event)
   if event == "PLAYER_LOGIN" then
     math.randomseed(math.floor(GetTime() * 1000))
     math.random()
+
+    -- ensure profile exists early (safe)
+    ROGU_LoadOnce()
   elseif event == "PLAYER_LOGOUT" then
     local db = ROGU_EnsureDB()
-    db.slots = ROGU.slots
-    db.enabled = ROGU.enabled
-    db.fallback = ROGU.fallback
+    local profile, _ = ROGU_EnsureProfile(db)
+    profile.slots = ROGU.slots
+    profile.enabled = ROGU.enabled
+    profile.fallback = ROGU.fallback
   end
 end)
+```
