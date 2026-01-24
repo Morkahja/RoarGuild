@@ -71,3 +71,5 @@ It triggers emotes directly from gameplay — no macros, no rotation pollution.
 
 **Characters are not loadouts.**
 **They are stories in motion.**
+
+More info on the discord: https://discord.gg/7J2QvXCMdE
