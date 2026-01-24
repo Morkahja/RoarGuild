@@ -2,7 +2,7 @@
 ## Title: RoarGuild
 ## Notes: Battle emotes on action slots with optional global trigger and integrated GodBod exercises.
 ## Author: babunigaming
-## Version: 1.21
-## SavedVariables: ROGUDB, WorkThatGodBodDB
+## Version: 1.3
+## SavedVariables: ROGUDB
 
 roarguild.lua
