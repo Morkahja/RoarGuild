@@ -4,19 +4,49 @@
 -- SavedVariables: ROGUDB, WorkThatGodBodDB
 
 -------------------------------------------------
--- [BLOCK START] RoarGuild (ROGU) / Battle Emote 
+-- [BLOCK START] RoarGuild (ROGU) / Battle Emote
 -------------------------------------------------
 
 local WATCH_SLOTS = {} -- [instance] = {slot, chance, cd, last, emoteIDs}
 local WATCH_MODE = false
 local ENABLED = true
+
 local LAST_ROAR_TIME = 0
 local LAST_REMINDER_TIME = 0
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
+
+-- Global fallback emote throttle (for the 0.5% chance in UseAction)
 local LAST_GLOBAL_ROAR_TIME = 0
 local GLOBAL_ROAR_CD = 2
 
+-- Invite text pool (used by /rogu invite)
+local inviteText = {
+  "<ROAR> A friendly guild for joy, curiosity, and shared adventures. We explore Azeroth at our own pace and roar at the good moments. You’re welcome to join us.",
+  "<ROAR> Hear that? That’s Azeroth calling. We quest, wander, laugh, and /roar at victories big and small. Come roar with us!",
+  "<ROAR> A band of joyful explorers roaming Azeroth for stories, treasure, and good times. No rush, no pressure, just adventure and loud roars.",
+  "<ROAR> The pride gathers! We celebrate level-ups, loot, sunsets, and silly moments with a good /roar. Casual adventures, big hearts. All welcome.",
+  "<ROAR> Casual adventurers, loud celebrations, shared stories. If you like exploring Azeroth and roaring at life, you belong here.",
+  "<ROAR> A guild for joy, curiosity, and shared stories. Quest, dungeon, PvP, RP, collect, and wander together. Play to inspire, not to impress.",
+  "<ROAR> Do you play for the world, not the meter? For stories, curiosity, and good vibes? We explore Azeroth together at our own pace.",
+  "<ROAR> We play to inspire, not to impress. A home for curious souls, shared adventures, and good energy across Azeroth.",
+  "<ROAR> Curious explorers and joyful wanderers wanted. We value respect, creativity, and shared stories. Let Azeroth hear your roar.",
+  "<ROAR> Playing for curiosity, respect, and shared stories? So are we. Explore Azeroth together. Roar together.",
+  "<ROAR> Not in a hurry? Good. We wander, explore, and celebrate the journey with loud roars and good company.",
+  "<ROAR> A casual guild for people who still enjoy getting lost in Azeroth. Stories, adventures, and plenty of /roar.",
+  "<ROAR> We chase moments, not meters. Quests, dungeons, wandering, laughter, and roaring along the way.",
+  "<ROAR> Join a pride that values curiosity, kindness, and shared adventures over rushing to the finish line.",
+  "<ROAR> Azeroth is a world, not a checklist. Come explore it with us and roar when something great happens.",
+  "<ROAR> From quiet wandering to loud celebrations, we enjoy every part of the journey together.",
+  "<ROAR> A home for explorers, storytellers, collectors, fighters, and friendly souls. We also roar a lot.",
+  "<ROAR> If you enjoy playing at your own pace and sharing the adventure, ROAR might be your new home.",
+  "<ROAR> We celebrate the small wins, the big moments, and everything in between. Join us and roar along.",
+  "<ROAR> Adventure feels better when shared. Explore Azeroth with us and let your voice be heard."
+}
+
+-- Spam protection for /rogu invite
+local INVITE_CD = 20
+local LAST_INVITE_TIME = 0
 
 local function roarChat(text)
   if DEFAULT_CHAT_FRAME then
@@ -30,6 +60,52 @@ local function roarNormalizeToken(token)
   token = string.gsub(token, "%s+$", "")
   token = string.upper(token)
   return token
+end
+
+local function pick(t)
+  local n = table.getn(t)
+  if n < 1 then return nil end
+  return t[math.random(1,n)]
+end
+
+-- Pick one invite line at random
+local function pickInvite()
+  local n = table.getn(inviteText)
+  if n < 1 then return nil end
+  return inviteText[math.random(1, n)]
+end
+
+-- Sends invite to /1 and a random global channel 2-10 (spam protected)
+local function sendInvite()
+  local now = GetTime()
+  if (now - (LAST_INVITE_TIME or 0)) < INVITE_CD then
+    local wait = math.ceil(INVITE_CD - (now - LAST_INVITE_TIME))
+    roarChat("invite cooldown: "..tostring(wait).."s")
+    return
+  end
+  LAST_INVITE_TIME = now
+
+  local msg = pickInvite()
+  if not msg or msg == "" then return end
+
+  SendChatMessage(msg, "CHANNEL", nil, 1)
+  SendChatMessage(msg, "CHANNEL", nil, math.random(2, 10))
+end
+
+local function performEmote(token)
+  if DoEmote then
+    DoEmote(token)
+  else
+    SendChatMessage("makes a battle cry!", "EMOTE")
+  end
+end
+
+local function split_cmd(raw)
+  local s = raw or ""
+  s = string.gsub(s, "^%s+", "")
+  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
+  if not cmd then cmd = "" rest = "" end
+  return cmd, rest
 end
 
 local function roarEnsureEmoteDefaults(db)
@@ -51,28 +127,6 @@ local function roarEnsureDB()
   if type(ROGUDB.slots) ~= "table" then ROGUDB.slots = {} end
   roarEnsureEmoteDefaults(ROGUDB)
   return ROGUDB
-end
-
-local function pick(t)
-  local n = table.getn(t)
-  if n < 1 then return nil end
-  return t[math.random(1,n)]
-end
-
-local function performEmote(token)
-  if DoEmote then
-    DoEmote(token)
-  else
-    SendChatMessage("makes a battle cry!", "EMOTE")
-  end
-end
-
-local function split_cmd(raw)
-  local s = raw or ""
-  s = string.gsub(s, "^%s+", "")
-  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
-  if not cmd then cmd = "" rest = "" end
-  return cmd, rest
 end
 
 local function reportRestedXP()
@@ -120,6 +174,8 @@ local function roarFindEmoteID(db, token)
   return nil
 end
 
+-- Sanitizes cfg.emoteIDs: keeps only unique numeric ids within [1..#db.emotes].
+-- Ensures at least {1}.
 local function roarSanitizeEmoteIDs(cfg, db)
   if type(cfg.emoteIDs) ~= "table" then cfg.emoteIDs = {} end
 
@@ -150,6 +206,8 @@ local function roarSanitizeEmoteIDs(cfg, db)
   cfg.emoteIDs = out
 end
 
+-- Picks a random emote token for a given slot config, using cfg.emoteIDs -> db.emotes[id].emote.
+-- Falls back to emote id 1 (ROAR) if anything is missing/invalid.
 local function roarPickEmoteForCfg(cfg)
   local db = roarEnsureDB()
   local ids = (cfg and cfg.emoteIDs) or nil
@@ -168,6 +226,7 @@ local function roarPickEmoteForCfg(cfg)
   return token
 end
 
+-- Applies cooldown + chance gating and fires a DB-driven emote for a given slot config.
 local function doBattleEmoteForSlot(cfg)
   if not ENABLED or not cfg then return end
 
@@ -187,6 +246,9 @@ local function doBattleEmoteForSlot(cfg)
 end
 
 local _roarLoaded = false
+
+-- One-time loader: binds runtime variables to DB tables and fills default values.
+-- Also sanitizes emoteIDs for every slot against current master emote list.
 local function roarEnsureLoaded()
   if _roarLoaded then return end
   local db = roarEnsureDB()
@@ -197,11 +259,9 @@ local function roarEnsureLoaded()
     if cfg.chance == nil then cfg.chance = 100 end
     if cfg.cd == nil then cfg.cd = 6 end
     if cfg.last == nil then cfg.last = 0 end
-
     if type(cfg.emoteIDs) ~= "table" or table.getn(cfg.emoteIDs) < 1 then
       cfg.emoteIDs = { 1 }
     end
-
     roarSanitizeEmoteIDs(cfg, db)
   end
 
@@ -212,7 +272,6 @@ end
 -------------------------------------------------
 -- [BLOCK END] RoarGuild (ROGU) / Battle Emote
 -------------------------------------------------
-
 
 -------------------------------------------------
 -- [BLOCK START] GodBod (exercise reminders)
@@ -403,18 +462,22 @@ function UseAction(slot, checkCursor, onSelf)
     end
   end
 
-  -- Global fallback: 0.5% chance on any action, uses instance 1's emoteIDs (or {1}).
+  -- Global fallback: 0.5% chance on any action (2s cooldown), uses instance 1 emoteIDs (or {1})
   if ENABLED and slot and slot >= 1 and slot <= 200 then
-    if math.random(1,1000) <= 5 then
-      local cfg = WATCH_SLOTS[1]
-      if not cfg then cfg = { emoteIDs = { 1 } } end
-      local token = roarPickEmoteForCfg(cfg)
-      if token and token ~= "" then
-        performEmote(token)
-        LAST_ROAR_TIME = now
+    if (now - (LAST_GLOBAL_ROAR_TIME or 0)) >= GLOBAL_ROAR_CD then
+      if math.random(1,1000) <= 5 then
+        local cfg = WATCH_SLOTS[1]
+        if not cfg then cfg = { emoteIDs = { 1 } } end
+        local token = roarPickEmoteForCfg(cfg)
+        if token and token ~= "" then
+          performEmote(token)
+          LAST_ROAR_TIME = now
+          LAST_GLOBAL_ROAR_TIME = now
+        end
       end
     end
   end
+
 
 
   if ENABLED and LAST_ROAR_TIME > 0 then
@@ -450,6 +513,12 @@ SlashCmdList["ROGU"] = function(raw)
   roarEnsureLoaded()
   local db = roarEnsureDB()
   local cmd, rest = split_cmd(raw)
+
+  -- /rogu invite
+  if cmd == "invite" then
+    sendInvite()
+    return
+  end
 
   -- /rogu emote <TOKEN>
   -- /rogu emote list
@@ -568,7 +637,7 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  -- existing commands
+  -- /rogu slotX <slot>
   local _, _, slotIndex = string.find(cmd, "^slot(%d+)$")
   if slotIndex then
     local instance = tonumber(slotIndex)
@@ -587,6 +656,7 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
+  -- /rogu chanceX <0-100>
   local _, _, chanceIndex = string.find(cmd, "^chance(%d+)$")
   if chanceIndex then
     local instance = tonumber(chanceIndex)
@@ -600,6 +670,7 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
+  -- /rogu timerX <sec>
   local _, _, timerIndex = string.find(cmd, "^timer(%d+)$")
   if timerIndex then
     local instance = tonumber(timerIndex)
@@ -653,13 +724,12 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  roarChat("/rogu slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | on | off")
+  roarChat("/rogu invite | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | on | off | rexp | roar")
 end
 
 -------------------------------------------------
 -- [BLOCK END] Slash Commands: /rogu (UPDATED)
 -------------------------------------------------
-
 
 -------------------------------------------------
 -- [BLOCK START] Slash Commands: /godbod
