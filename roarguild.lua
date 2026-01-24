@@ -724,7 +724,7 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  roarChat("/rogu invite | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | on | off | rexp | roar")
+  roarChat(" invite | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | on | off | rexp | roar")
 end
 
 -------------------------------------------------
