@@ -1,4 +1,4 @@
--- RoarGuild v1.3 (GodBod removed)
+-- RoarGuild v1.3
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
 -- SavedVariables: ROGUDB
