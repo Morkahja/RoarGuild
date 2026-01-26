@@ -590,6 +590,30 @@ SlashCmdList["ROGU"] = function(raw)
     roarChat("all instances cleared")
     return
   end
+  -- /rogu resetcd reset all cooldowns
+  if cmd == "RESETCD" then
+  local now = GetTime()
+
+  -- reset per-instance cooldown gates
+  for _, cfg in pairs(ROGU.slots or {}) do
+    if type(cfg) == "table" then
+      cfg.last = 0
+    end
+  end
+
+  -- reset fallback throttle too
+  if type(ROGU.fallback) == "table" then
+    ROGU.fallback.last = 0
+  end
+
+  -- reset reminder timers (optional but sane)
+  ROGU.lastRoar = 0
+  ROGU.lastReminder = 0
+
+  ROGU_SyncToProfile()
+  roarChat("cooldowns reset")
+  return
+end
 
   if cmd == "INFO" then
     roarChat("version: "..ADDON_VERSION)
@@ -650,7 +674,8 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  roarChat(" invite | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | on | off | rexp | roar")
+  roarChat(" invite | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
+
 end
 
 -------------------------------------------------
