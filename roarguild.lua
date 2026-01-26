@@ -10,7 +10,6 @@ local ADDON_VERSION = "1.3"
 
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
-local INVITE_CD = 20
 
 -- Independent global fallback defaults (per-profile)
 -- chancePermille: 5 => 0.5%
@@ -68,7 +67,6 @@ local ROGU = {
 
   lastRoar = 0,
   lastReminder = 0,
-  lastInvite = 0,
 
   _loaded = false,
 }
@@ -297,20 +295,15 @@ end
 -------------------------------------------------
 -- [2.6] Features
 -------------------------------------------------
-local function ROGU_SendInvite()
-  local now = GetTime()
-  if (now - (ROGU.lastInvite or 0)) < INVITE_CD then
-    local wait = math.ceil(INVITE_CD - (now - ROGU.lastInvite))
-    roarChat("invite cooldown: "..tostring(wait).."s")
-    return
-  end
-  ROGU.lastInvite = now
-
+local function ROGU_SendInvite(channelNum)
   local msg = U.pick(inviteText)
   if not msg or msg == "" then return end
 
-  -- ONLY channel 1
-  SendChatMessage(msg, "CHANNEL", nil, 1)
+  local ch = tonumber(channelNum) or 1
+  if ch < 1 then ch = 1 end
+  if ch > 10 then ch = 10 end
+
+  SendChatMessage(msg, "CHANNEL", nil, ch)
 end
 
 local function ROGU_DoBattleEmoteForCfg(cfg, now)
@@ -413,8 +406,10 @@ SlashCmdList["ROGU"] = function(raw)
   cmd = U.upper(cmd)
 
   if cmd == "INVITE" then
-    ROGU_SendInvite()
-    return
+  local ch = U.trim(rest or "")
+  if ch == "" then ch = "1" end
+  ROGU_SendInvite(ch)
+  return
   end
 
   -- /rogu emote <TOKEN> | /rogu emote list
@@ -674,7 +669,7 @@ end
     return
   end
 
-  roarChat(" invite | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
+  roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
 
 end
 
