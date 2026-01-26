@@ -288,6 +288,12 @@ local function ROGU_LoadOnce()
   ROGU._loaded = true
 end
 
+local function ROGU_SyncToProfile()
+  if not ROGU.profile then return end
+  ROGU.profile.enabled = ROGU.enabled
+  ROGU.profile.slots = ROGU.slots
+  ROGU.profile.fallback = ROGU.fallback
+end
 -------------------------------------------------
 -- [2.6] Features
 -------------------------------------------------
@@ -578,7 +584,9 @@ SlashCmdList["ROGU"] = function(raw)
 
   if cmd == "RESET" then
     ROGU.slots = {}
-    if ROGU.profile then ROGU.profile.slots = ROGU.slots end
+    if ROGU.profile then
+      ROGU.profile.slots = ROGU.slots
+    end
     roarChat("all instances cleared")
     return
   end
@@ -618,14 +626,14 @@ SlashCmdList["ROGU"] = function(raw)
 
   if cmd == "ON" then
     ROGU.enabled = true
-    if ROGU.profile then ROGU.profile.enabled = true end
+    ROGU_SyncToProfile()
     roarChat("enabled")
     return
   end
 
   if cmd == "OFF" then
     ROGU.enabled = false
-    if ROGU.profile then ROGU.profile.enabled = false end
+    ROGU_SyncToProfile()
     roarChat("disabled")
     return
   end
@@ -659,12 +667,8 @@ f:SetScript("OnEvent", function(_, event)
 
     -- ensure profile exists early (safe)
     ROGU_LoadOnce()
-  elseif event == "PLAYER_LOGOUT" then
-    local db = ROGU_EnsureDB()
-    local profile, _ = ROGU_EnsureProfile(db)
-    profile.slots = ROGU.slots
-    profile.enabled = ROGU.enabled
-    profile.fallback = ROGU.fallback
-  end
+elseif event == "PLAYER_LOGOUT" then
+  ROGU_SyncToProfile()
+end
 end)
 
