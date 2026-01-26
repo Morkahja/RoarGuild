@@ -1,6 +1,6 @@
 **🦁 RoarGuild Addon**
 
-**Version:** 1.3
+**Version:** 1.31
 **Author:** babunigaming
 **Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
 
@@ -64,10 +64,7 @@ It triggers emotes directly from gameplay — no macros, no rotation pollution.
 
 ━━━━━━━━━━━━━━━━━━
 
-**Design Notes**
-• No polling, no OnUpdate spam
-• Fully event-driven through real gameplay
-• Default state is always safe and minimal
+• Each character has its own entries in the saved variables database, so individual configurations are possible.
 
 **Characters are not loadouts.**
 **They are stories in motion.**
