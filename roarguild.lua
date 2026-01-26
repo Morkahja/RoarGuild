@@ -690,10 +690,27 @@ f:SetScript("OnEvent", function(_, event)
     math.randomseed(math.floor(GetTime() * 1000))
     math.random()
 
-    -- ensure profile exists early (safe)
+    -- ensure profile exists early
     ROGU_LoadOnce()
-elseif event == "PLAYER_LOGOUT" then
-  ROGU_SyncToProfile()
-end
+
+    -- reset all cooldown gates on login
+    for _, cfg in pairs(ROGU.slots or {}) do
+      if type(cfg) == "table" then
+        cfg.last = 0
+      end
+    end
+
+    if type(ROGU.fallback) == "table" then
+      ROGU.fallback.last = 0
+    end
+
+    ROGU.lastRoar = 0
+    ROGU.lastReminder = 0
+
+    ROGU_SyncToProfile()
+
+  elseif event == "PLAYER_LOGOUT" then
+    ROGU_SyncToProfile()
+  end
 end)
 
