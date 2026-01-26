@@ -30,6 +30,7 @@ It triggers emotes directly from gameplay — no macros, no rotation pollution.
 • `/rogu slotX <slot>` — assign slot to instance X
 • `/rogu chanceX <0–100>` — trigger chance for instance X
 • `/rogu timerX <seconds>` — cooldown for instance X
+• `/rogu resetcd` — resets all slot cooldown timers.
 
 **Emote System**
 • `/rogu emote <TOKEN>` — add emote to master list
@@ -46,6 +47,7 @@ It triggers emotes directly from gameplay — no macros, no rotation pollution.
 • `/rogu on` / `/rogu off` — enable or disable
 • `/rogu roar` — manually fire instance 1
 • `/rogu rexp` — show rested XP (max 30 bubbles)
+• `/rogu invite` — sends a guild recruitment message to the general chat 
 
 ━━━━━━━━━━━━━━━━━━
 
