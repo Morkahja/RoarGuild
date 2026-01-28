@@ -75,24 +75,6 @@ local ROGU = {
 -- [2.1] Data Pools
 -------------------------------------------------
 local inviteText = {
-Lua issues (syntax-breaking):
-
-1. Missing commas between some entries.
-
-* After `"ROAR!"` (the “Adventure feels better…” line) you forgot a comma before the next string.
-* After `"the point."` you forgot a comma before the next string.
-* After `"Come join ROAR."` (the “Looking for a warm…” line) you forgot a comma before the next string.
-* After `"just right."` you forgot a comma before the next string.
-* After the last line `"You’re welcome to join."` you need no comma (that part is fine).
-
-2. Smart apostrophes and em dash are fine in Lua (they’re just UTF-8 characters) as long as your file is saved as UTF-8. If the addon is saved as ANSI/Windows-1252, those characters can break display or parsing in some setups.
-
-3. Not a Lua error, but typos: “alot” -> “a lot”, “Yall” -> “Y’all”, “Thats” -> “That’s”, “MOves” -> “Moves”, “COme” -> “Come”, “ofte..” -> “often”.
-
-Minimal fixed version (only adds the missing commas; otherwise unchanged):
-
-```lua
-local inviteText = {
   "<ROAR> Is a friendly guild for joy, curiosity, and shared adventures. We explore Azeroth at our own pace and roar alot. You’re welcome to join us.",
   "<ROAR> Hear that? That’s Azeroth roaring. We quest, wander, laugh, and /roar at victories. Come join us!",
   "<ROAR> A guild of joyful explorers roaming Azeroth for stories, treasure, and good times. No rush, no pressure, just adventure and loud roars. Join now!",
