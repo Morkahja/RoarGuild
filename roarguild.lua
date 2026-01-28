@@ -178,7 +178,17 @@ local inviteText = {
   "<ROAR> Through valleys and lore, we wander some more—come join the adventure and let out a roar.",
   "<ROAR> From sunrise to night, we share the delight—come join ROAR and play it just right.",
   "<ROAR> Some guilds min-max. We max the moment—and occasionally the volume. Come join us.",
-  "<ROAR> Warning: joining may cause spontaneous roars, shared adventures, and unexpected joy. You’re welcome to join."
+  "<ROAR> Warning: joining may cause spontaneous roars, shared adventures, and unexpected joy. You’re welcome to join.",
+  "<ROAR> We stroll and explore, then laugh and roar—come join our path and wander more.",
+  "<ROAR> No need to race, just find your pace—come join our guild, this is the place.",
+  "<ROAR> We quest, we cheer, the road is clear—come join us here, adventurer dear.",
+  "<ROAR> Through hill and shore, we seek the lore—come join the fun and roar once more.",
+  "<ROAR> We take it slow, let stories grow—come join ROAR and let it flow.",
+  "<ROAR> From dawn to night, the vibes feel right—come join the pride and play it light.",
+  "<ROAR> We roam the land, hand in hand—come join our guild, take a stand.",
+  "<ROAR> Not here to grind, but unwind—come join ROAR and share the time.",
+  "<ROAR> We laugh, we cheer, good friends are near—come join us now, your spot is here.",
+  "<ROAR> The world feels wide when shared inside—come join our pride and enjoy the ride."
 }
 
 
