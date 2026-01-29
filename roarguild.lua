@@ -188,7 +188,7 @@ local inviteText = {
   "<ROAR> We roam the land, hand in hand—come join our guild, take a stand.",
   "<ROAR> Not here to grind, but unwind—come join ROAR and share the time.",
   "<ROAR> We laugh, we cheer, good friends are near—come join us now, your spot is here.",
-  "<ROAR> The world feels wide when shared inside—come join our pride and enjoy the ride."
+  "<ROAR> The world feels wide when shared inside—come join our pride and enjoy the ride.",
   "<ROAR> To ancient songs remembered, blades kept keen, and dignity carried even in exile—may our cups shine as bright as the legacy we refuse to forget.",
   "<ROAR> To vigilance without bitterness, honor without a homeland, and nights where old histories rest quietly beside new friendships.",
   "<ROAR> To deals sealed with a grin, risks taken with confidence, and feasts funded by clever timing—gold comes and goes, but a good celebration pays dividends.",
