@@ -718,7 +718,7 @@ SlashCmdList["ROGU"] = function(raw)
   -- [4.1] Core: help / info / enable
   -------------------------------------------------
   if cmd == "" or cmd == "HELP" then
-    roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
+    roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | fallback chance <0-1000> | fallback timer <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
     return
   end
 
@@ -818,6 +818,45 @@ return
   if cmd == "WATCH" then
     ROGU.watchMode = not ROGU.watchMode
     roarChat("watch mode "..(ROGU.watchMode and "ON" or "OFF"))
+    return
+  end
+
+  -------------------------------------------------
+  -- [4.4.5] Fallback config: chance / timer
+  -------------------------------------------------
+  if cmd == "FALLBACK" then
+    local sub, subrest = U.split_cmd(rest or "")
+    sub = U.upper(sub)
+    local fb = ROGU.fallback
+    if type(fb) ~= "table" then
+      fb = {}
+      ROGU.fallback = fb
+      ROGU_EnsureFallbackDefaultsOn(fb)
+    end
+
+    if sub == "CHANCE" then
+      local n = tonumber(subrest)
+      if n and n >= 0 and n <= 1000 then
+        fb.chancePermille = n
+        roarChat("fallback chance "..tostring(n).."/1000")
+      else
+        roarChat("usage: /rogu fallback chance <0-1000>")
+      end
+      return
+    end
+
+    if sub == "TIMER" then
+      local n = tonumber(subrest)
+      if n and n >= 0 then
+        fb.cd = n
+        roarChat("fallback cooldown "..tostring(n).."s")
+      else
+        roarChat("usage: /rogu fallback timer <sec>")
+      end
+      return
+    end
+
+    roarChat("usage: /rogu fallback chance <0-1000> | /rogu fallback timer <sec>")
     return
   end
 
@@ -1018,7 +1057,7 @@ return
     return
   end
 
-  roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
+  roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | fallback chance <0-1000> | fallback timer <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
 end
 
 -------------------------------------------------
