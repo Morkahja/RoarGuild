@@ -2,9 +2,19 @@
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
 -- SavedVariables: ROGUDB
+--
+-- Structure guide:
+--   [0] Constants + defaults
+--   [1] Shared utilities
+--   [2] Core state + data pools
+--   [2.x] Profile + DB helpers
+--   [2.x] Features + stats
+--   [3] Hooks
+--   [4] Slash commands
+--   [5] Init / Save
 
 -------------------------------------------------
--- [0] Constants
+-- [0] Constants + defaults
 -------------------------------------------------
 local ADDON_VERSION = "1.32"
 
@@ -16,7 +26,7 @@ local ROAR_REMINDER_CD = 73
 local FALLBACK_DEFAULT = { enabled=true, cd=2, chancePermille=5, last=0, emoteIDs={1} }
 
 -------------------------------------------------
--- [1] Shared Utils
+-- [1] Shared utilities (string + table helpers)
 -------------------------------------------------
 local U = {}
 
@@ -55,7 +65,7 @@ function U.arrayHas(t, value)
 end
 
 -------------------------------------------------
--- [2] RoarGuild (ROGU) State
+-- [2] Core addon state (runtime bindings)
 -------------------------------------------------
 local ROGU = {
   profileKey = nil,
@@ -74,7 +84,8 @@ local ROGU = {
 }
 
 -------------------------------------------------
--- [2.1] Data Pools
+-- [2.1] Data pools
+-- Invite message library used for /rogu invite
 -------------------------------------------------
 local inviteText = {
   "<ROAR> Is a friendly guild for joy, curiosity, and shared adventures. We explore Azeroth at our own pace and roar alot. You are welcome to join us.",
@@ -276,6 +287,7 @@ local inviteText = {
 
 -------------------------------------------------
 -- [2.2] Chat + Emote
+-- Small wrappers to keep chat/emote behavior consistent.
 -------------------------------------------------
 local function roarChat(text)
   if DEFAULT_CHAT_FRAME then
@@ -292,7 +304,10 @@ local function performEmote(token)
 end
 
 -------------------------------------------------
--- [2.3] Profiles 
+-- [2.3] Profiles + DB helpers
+-- - Per-character profile key
+-- - Shared emote DB defaults
+-- - Legacy migration (root -> profile)
 -------------------------------------------------
 local function ROGU_ProfileKey()
   local name = UnitName("player") or "Unknown"
@@ -388,7 +403,8 @@ end
 
 
 -------------------------------------------------
--- [2.4] Emote IDs sanitize + pick
+-- [2.4] Emote IDs: sanitize + pick
+-- Ensures valid IDs and returns a safe emote token for use.
 -------------------------------------------------
 local function ROGU_FindEmoteID(db, token)
   token = U.upper(token)
@@ -406,7 +422,7 @@ local function ROGU_FindEmoteID(db, token)
   return nil
 end
 
--- keeps only unique numeric ids within [1..#db.emotes], ensures at least {1}
+-- Keeps only unique numeric ids within [1..#db.emotes], ensures at least {1}
 local function ROGU_SanitizeEmoteIDs(cfg, db)
   if type(cfg.emoteIDs) ~= "table" then cfg.emoteIDs = {} end
 
@@ -452,7 +468,8 @@ local ROGU_StatsPerMinuteLastHour
 local ROGU_StatsMaybeHourlyReport_OnActivity
 
 -------------------------------------------------
--- [2.5] Load Once (bind runtime to current profile)
+-- [2.5] Load once (bind runtime to current profile)
+-- Centralizes profile binding + slot/fallback normalization.
 -------------------------------------------------
 local function ROGU_LoadOnce()
   if ROGU._loaded then return end
@@ -490,7 +507,11 @@ end
 
 
 -------------------------------------------------
--- [2.6] Features
+-- [2.6] Features (invite, emote, fallback, reminders)
+-- - invite: channel message pool
+-- - battle emotes: slot-based triggers
+-- - fallback: always-on low-chance emote
+-- - reminders: gentle nudge to /roar
 -------------------------------------------------
 local function ROGU_SendInvite(channelNum)
   local msg = U.pick(inviteText)
@@ -574,6 +595,7 @@ end
 
 -------------------------------------------------
 -- [2.7] Stats: lifetime total + rolling last hour
+-- Rolling window: stamps[] + head pointer to avoid reallocations.
 -------------------------------------------------
 
 local STATS_WINDOW = 3600
@@ -672,7 +694,8 @@ end
 
 
 -------------------------------------------------
--- [3] Hook UseAction
+-- [3] Action hook
+-- Wrap UseAction to detect ability presses and trigger emotes.
 -------------------------------------------------
 local _Orig_UseAction = UseAction
 
@@ -704,7 +727,8 @@ function UseAction(slot, checkCursor, onSelf)
 end
 
 -------------------------------------------------
--- [4] Slash Commands: /rogu
+-- [4] Slash commands: /rogu
+-- Command router with sub-commands for setup and reporting.
 -------------------------------------------------
 SLASH_ROGU1 = "/rogu"
 SlashCmdList["ROGU"] = function(raw)
@@ -716,6 +740,7 @@ SlashCmdList["ROGU"] = function(raw)
 
   -------------------------------------------------
   -- [4.1] Core: help / info / enable
+  -- Basic addon state and reporting.
   -------------------------------------------------
   if cmd == "" or cmd == "HELP" then
     roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
@@ -786,6 +811,7 @@ SlashCmdList["ROGU"] = function(raw)
 
   -------------------------------------------------
   -- [4.2] Social: invite + manual roar
+  -- Manual roar is useful for testing and stats.
   -------------------------------------------------
   if cmd == "INVITE" then
     local ch = U.trim(rest or "")
@@ -822,7 +848,8 @@ return
   end
 
   -------------------------------------------------
-  -- [4.5]Instance config: slotX / chanceX / timerX
+  -- [4.5] Instance config: slotX / chanceX / timerX
+  -- Each "instance" is a slot watcher with its own cooldown + chance.
   -------------------------------------------------
   local _, _, slotIndex = string.find(cmd, "^SLOT(%d+)$")
   if slotIndex then
@@ -870,7 +897,8 @@ return
   end
 
   -------------------------------------------------
-  -- [4.6]Emote DB: add + list
+  -- [4.6] Emote DB: add + list
+  -- Manages the shared emote list (account-wide).
   -------------------------------------------------
   if cmd == "EMOTE" then
     local sub = U.upper(rest)
@@ -911,7 +939,8 @@ return
   end
 
   -------------------------------------------------
-  -- [4.7]Instance emote selection: emoteX add/remove/clear/list
+  -- [4.7] Instance emote selection: emoteX add/remove/clear/list
+  -- Assign emote IDs to a specific instance.
   -------------------------------------------------
   local _, _, emoteIndex = string.find(cmd, "^EMOTE(%d+)$")
   if emoteIndex then
@@ -985,7 +1014,7 @@ return
   end
 
   -------------------------------------------------
-  -- [4.8]Maintenance: reset instances / reset cooldown gates
+  -- [4.8] Maintenance: reset instances / reset cooldown gates
   -------------------------------------------------
   if cmd == "RESET" then
     ROGU.slots = {}
@@ -1023,6 +1052,7 @@ end
 
 -------------------------------------------------
 -- [5] Init / Save
+-- Event wiring for login/logout state persistence.
 -------------------------------------------------
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
