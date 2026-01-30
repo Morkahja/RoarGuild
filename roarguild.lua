@@ -65,6 +65,8 @@ local ROGU = {
   enabled = true,       -- from profile.enabled
   watchMode = false,
 
+  stats = nil,          -- bound to profile.stats
+  
   lastRoar = 0,
   lastReminder = 0,
 
@@ -290,7 +292,7 @@ local function performEmote(token)
 end
 
 -------------------------------------------------
--- [2.3] Profiles (Option C)
+-- [2.3] Profiles 
 -------------------------------------------------
 local function ROGU_ProfileKey()
   local name = UnitName("player") or "Unknown"
@@ -372,10 +374,18 @@ local function ROGU_EnsureProfile(db)
   if type(p.fallback) ~= "table" then p.fallback = {} end
   ROGU_EnsureFallbackDefaultsOn(p.fallback)
 
+  -- Per-character stats (rolling hour + lifetime total)
+  if type(p.stats) ~= "table" then p.stats = {} end
+  if p.stats.total == nil then p.stats.total = 0 end
+  if type(p.stats.stamps) ~= "table" then p.stats.stamps = {} end
+  if p.stats.head == nil then p.stats.head = 1 end
+  if p.stats.lastReport == nil then p.stats.lastReport = 0 end
+
   ROGU_MigrateLegacyRootToProfile(db, p)
 
   return p, key
 end
+
 
 -------------------------------------------------
 -- [2.4] Emote IDs sanitize + pick
@@ -435,6 +445,13 @@ local function ROGU_PickEmoteForCfg(cfg)
 end
 
 -------------------------------------------------
+-- [2.4.9] Forward declarations for stats
+-------------------------------------------------
+local ROGU_StatsRecordEmote
+local ROGU_StatsPerMinuteLastHour
+local ROGU_StatsMaybeHourlyReport_OnActivity
+
+-------------------------------------------------
 -- [2.5] Load Once (bind runtime to current profile)
 -------------------------------------------------
 local function ROGU_LoadOnce()
@@ -447,6 +464,8 @@ local function ROGU_LoadOnce()
   ROGU.slots = profile.slots
   ROGU.fallback = profile.fallback
   ROGU.enabled = profile.enabled
+  ROGU.stats = profile.stats
+
 
   for _, cfg in pairs(ROGU.slots) do
     if cfg.chance == nil then cfg.chance = 100 end
@@ -467,6 +486,7 @@ local function ROGU_SyncToProfile()
   ROGU.profile.slots = ROGU.slots
   ROGU.profile.fallback = ROGU.fallback
 end
+
 -------------------------------------------------
 -- [2.6] Features
 -------------------------------------------------
@@ -492,6 +512,10 @@ local function ROGU_DoBattleEmoteForCfg(cfg, now)
     local token = ROGU_PickEmoteForCfg(cfg)
     performEmote(token)
     ROGU.lastRoar = now
+
+    if ROGU_StatsRecordEmote then
+      ROGU_StatsRecordEmote()
+    end
   end
 end
 
@@ -514,6 +538,10 @@ local function ROGU_TryFallback(now, slot)
     performEmote(token)
     ROGU.lastRoar = now
     fb.last = now
+
+    if ROGU_StatsRecordEmote then
+      ROGU_StatsRecordEmote()
+    end
   end
 end
 
@@ -541,6 +569,106 @@ local function ROGU_ReportRestedXP()
   roarChat("Rest: "..bubbles.." bubbles ("..r.." XP)")
 end
 
+
+-------------------------------------------------
+-- [2.7] Stats: lifetime total + rolling last hour
+-------------------------------------------------
+
+local STATS_WINDOW = 3600
+local STATS_REPORT_INTERVAL = 3600
+
+local function ROGU_Now()
+  if time then return time() end
+  return math.floor(GetTime())
+end
+
+local function ROGU_StatsPrune(now)
+  local s = ROGU.stats
+  if type(s) ~= "table" or type(s.stamps) ~= "table" then return end
+
+  local cutoff = now - STATS_WINDOW
+  local stamps = s.stamps
+  local head = tonumber(s.head) or 1
+  if head < 1 then head = 1 end
+
+  while stamps[head] and stamps[head] <= cutoff do
+    head = head + 1
+  end
+  s.head = head
+
+  -- compact occasionally so stamps doesn't grow forever
+  local n = table.getn(stamps)
+  if head > 50 and head > math.floor(n / 2) then
+    local out = {}
+    local j = 1
+    local i = head
+    while stamps[i] do
+      out[j] = stamps[i]
+      j = j + 1
+      i = i + 1
+    end
+    s.stamps = out
+    s.head = 1
+  end
+end
+
+local function ROGU_StatsCountLastHour()
+  local s = ROGU.stats
+  if type(s) ~= "table" or type(s.stamps) ~= "table" then return 0 end
+  local n = table.getn(s.stamps)
+  local head = tonumber(s.head) or 1
+  if head < 1 then head = 1 end
+  local c = n - head + 1
+  if c < 0 then c = 0 end
+  return c
+end
+
+ROGU_StatsRecordEmote = function()
+  local s = ROGU.stats
+  if type(s) ~= "table" then return end
+
+  local now = ROGU_Now()
+  if type(s.stamps) ~= "table" then s.stamps = {} end
+  if s.head == nil then s.head = 1 end
+  if s.total == nil then s.total = 0 end
+
+  s.total = s.total + 1
+  s.stamps[table.getn(s.stamps) + 1] = now
+
+  -- keep rolling window clean on each emote
+  ROGU_StatsPrune(now)
+end
+
+ROGU_StatsPerMinuteLastHour = function()
+  local now = ROGU_Now()
+  ROGU_StatsPrune(now)
+  return ROGU_StatsCountLastHour() / 60
+end
+
+ROGU_StatsMaybeHourlyReport_OnActivity = function()
+  local s = ROGU.stats
+  if type(s) ~= "table" then return end
+
+  local now = ROGU_Now()
+  ROGU_StatsPrune(now)
+
+  s.lastReport = tonumber(s.lastReport) or 0
+  if s.lastReport == 0 then
+    s.lastReport = now
+    return
+  end
+
+  if now - s.lastReport < STATS_REPORT_INTERVAL then return end
+
+  local count = ROGU_StatsCountLastHour()
+  local perMin = count / 60
+  local total = tonumber(s.total) or 0
+  roarChat("total roars: "..tostring(total).." | last hour: "..tostring(count).." ("..string.format("%.1f", perMin).." per minute)")
+
+  s.lastReport = now
+end
+
+
 -------------------------------------------------
 -- [3] Hook UseAction
 -------------------------------------------------
@@ -565,6 +693,10 @@ function UseAction(slot, checkCursor, onSelf)
 
   -- Reminder
   ROGU_MaybeReminder(now)
+
+  -- Stats: prune + hourly report gate (only on slot activity)
+  ROGU_StatsMaybeHourlyReport_OnActivity()
+
 
   return _Orig_UseAction(slot, checkCursor, onSelf)
 end
@@ -593,6 +725,14 @@ SlashCmdList["ROGU"] = function(raw)
     roarChat("profile: "..tostring(ROGU.profileKey or "?"))
     roarChat("enabled: "..tostring(ROGU.enabled))
     roarChat("emotes in DB: "..tostring(table.getn(db.emotes)))
+
+    if type(ROGU.stats) == "table" then
+      local total = tonumber(ROGU.stats.total) or 0
+      local perMin = ROGU_StatsPerMinuteLastHour()
+      roarChat("total roars: "..tostring(total))
+      roarChat("last hour: "..string.format("%.1f", perMin).." per minute")
+    end
+
 
     if type(ROGU.fallback) == "table" then
       local fb = ROGU.fallback
@@ -648,8 +788,11 @@ SlashCmdList["ROGU"] = function(raw)
   if cmd == "ROAR" then
     local token = ROGU_PickEmoteForCfg(ROGU.slots[1] or { emoteIDs={1} })
     performEmote(token)
-    ROGU.lastRoar = GetTime()
-    return
+    if ROGU_StatsRecordEmote then
+      ROGU_StatsRecordEmote()
+    end
+ROGU.lastRoar = GetTime()
+return
   end
 
   -------------------------------------------------
