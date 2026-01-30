@@ -580,14 +580,146 @@ SlashCmdList["ROGU"] = function(raw)
   local cmd, rest = U.split_cmd(raw)
   cmd = U.upper(cmd)
 
-  if cmd == "INVITE" then
-  local ch = U.trim(rest or "")
-  if ch == "" then ch = "1" end
-  ROGU_SendInvite(ch)
-  return
+  -------------------------------------------------
+  -- [4.1] Core: help / info / enable
+  -------------------------------------------------
+  if cmd == "" or cmd == "HELP" then
+    roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
+    return
   end
 
-  -- /rogu emote <TOKEN> | /rogu emote list
+  if cmd == "INFO" then
+    roarChat("version: "..ADDON_VERSION)
+    roarChat("profile: "..tostring(ROGU.profileKey or "?"))
+    roarChat("enabled: "..tostring(ROGU.enabled))
+    roarChat("emotes in DB: "..tostring(table.getn(db.emotes)))
+
+    if type(ROGU.fallback) == "table" then
+      local fb = ROGU.fallback
+      ROGU_SanitizeEmoteIDs(fb, db)
+      local fbids = ""
+      local k = 1
+      while fb.emoteIDs and fb.emoteIDs[k] do
+        if fbids ~= "" then fbids = fbids.."," end
+        fbids = fbids..tostring(fb.emoteIDs[k])
+        k = k + 1
+      end
+      if fbids == "" then fbids = "1" end
+      roarChat("fallback: enabled "..tostring(fb.enabled).." | cd "..tostring(fb.cd).."s | chance "..tostring(fb.chancePermille).."/1000 | emotes ["..fbids.."]")
+    end
+
+    for i,cfg in pairs(ROGU.slots) do
+      ROGU_SanitizeEmoteIDs(cfg, db)
+      local ids = ""
+      for k=1,table.getn(cfg.emoteIDs or {}) do
+        if ids ~= "" then ids = ids.."," end
+        ids = ids..tostring(cfg.emoteIDs[k])
+      end
+      if ids == "" then ids = "1" end
+      roarChat("instance"..tostring(i)..": slot "..tostring(cfg.slot).." | chance "..tostring(cfg.chance).."% | cd "..tostring(cfg.cd).."s | emotes ["..ids.."]")
+    end
+    return
+  end
+
+  if cmd == "ON" then
+    ROGU.enabled = true
+    ROGU_SyncToProfile()
+    roarChat("enabled")
+    return
+  end
+
+  if cmd == "OFF" then
+    ROGU.enabled = false
+    ROGU_SyncToProfile()
+    roarChat("disabled")
+    return
+  end
+
+  -------------------------------------------------
+  -- [4.2] Social: invite + manual roar
+  -------------------------------------------------
+  if cmd == "INVITE" then
+    local ch = U.trim(rest or "")
+    if ch == "" then ch = "1" end
+    ROGU_SendInvite(ch)
+    return
+  end
+
+  if cmd == "ROAR" then
+    local token = ROGU_PickEmoteForCfg(ROGU.slots[1] or { emoteIDs={1} })
+    performEmote(token)
+    ROGU.lastRoar = GetTime()
+    return
+  end
+
+  -------------------------------------------------
+  -- [4.3] Utility: rested XP
+  -------------------------------------------------
+  if cmd == "REXP" then
+    ROGU_ReportRestedXP()
+    return
+  end
+
+  -------------------------------------------------
+  -- [4.4] Debug: watch pressed slots
+  -------------------------------------------------
+  if cmd == "WATCH" then
+    ROGU.watchMode = not ROGU.watchMode
+    roarChat("watch mode "..(ROGU.watchMode and "ON" or "OFF"))
+    return
+  end
+
+  -------------------------------------------------
+  -- [4.5]Instance config: slotX / chanceX / timerX
+  -------------------------------------------------
+  local _, _, slotIndex = string.find(cmd, "^SLOT(%d+)$")
+  if slotIndex then
+    local instance = tonumber(slotIndex)
+    local slot = tonumber(rest)
+    if instance and slot then
+      ROGU.slots[instance] = ROGU.slots[instance] or { emoteIDs={1} }
+      local cfg = ROGU.slots[instance]
+      cfg.slot = slot
+      cfg.chance = cfg.chance or 100
+      cfg.cd = cfg.cd or 6
+      cfg.last = 0
+      ROGU_SanitizeEmoteIDs(cfg, db)
+      roarChat("instance"..tostring(instance).." watching slot "..tostring(slot))
+    else
+      roarChat("usage: /rogu slotX <slot>")
+    end
+    return
+  end
+
+  local _, _, chanceIndex = string.find(cmd, "^CHANCE(%d+)$")
+  if chanceIndex then
+    local instance = tonumber(chanceIndex)
+    local n = tonumber(rest)
+    if ROGU.slots[instance] and n and n>=0 and n<=100 then
+      ROGU.slots[instance].chance = n
+      roarChat("instance"..tostring(instance).." chance "..tostring(n).."%")
+    else
+      roarChat("invalid instance or value")
+    end
+    return
+  end
+
+  local _, _, timerIndex = string.find(cmd, "^TIMER(%d+)$")
+  if timerIndex then
+    local instance = tonumber(timerIndex)
+    local n = tonumber(rest)
+    if ROGU.slots[instance] and n and n>=0 then
+      ROGU.slots[instance].cd = n
+      roarChat("instance"..tostring(instance).." cooldown "..tostring(n).."s")
+    else
+      roarChat("invalid instance or value")
+    end
+    return
+  end
+
+  -------------------------------------------------
+  -- [4.6]Emote DB: add + list
+  -------------------------------------------------
   if cmd == "EMOTE" then
     local sub = U.upper(rest)
 
@@ -626,7 +758,9 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  -- /rogu emoteX <id|-id|clear|list>
+  -------------------------------------------------
+  -- [4.7]Instance emote selection: emoteX add/remove/clear/list
+  -------------------------------------------------
   local _, _, emoteIndex = string.find(cmd, "^EMOTE(%d+)$")
   if emoteIndex then
     local instance = tonumber(emoteIndex)
@@ -698,60 +832,9 @@ SlashCmdList["ROGU"] = function(raw)
     return
   end
 
-  -- /rogu slotX <slot>
-  local _, _, slotIndex = string.find(cmd, "^SLOT(%d+)$")
-  if slotIndex then
-    local instance = tonumber(slotIndex)
-    local slot = tonumber(rest)
-    if instance and slot then
-      ROGU.slots[instance] = ROGU.slots[instance] or { emoteIDs={1} }
-      local cfg = ROGU.slots[instance]
-      cfg.slot = slot
-      cfg.chance = cfg.chance or 100
-      cfg.cd = cfg.cd or 6
-      cfg.last = 0
-      ROGU_SanitizeEmoteIDs(cfg, db)
-      roarChat("instance"..tostring(instance).." watching slot "..tostring(slot))
-    else
-      roarChat("usage: /rogu slotX <slot>")
-    end
-    return
-  end
-
-  -- /rogu chanceX <0-100>
-  local _, _, chanceIndex = string.find(cmd, "^CHANCE(%d+)$")
-  if chanceIndex then
-    local instance = tonumber(chanceIndex)
-    local n = tonumber(rest)
-    if ROGU.slots[instance] and n and n>=0 and n<=100 then
-      ROGU.slots[instance].chance = n
-      roarChat("instance"..tostring(instance).." chance "..tostring(n).."%")
-    else
-      roarChat("invalid instance or value")
-    end
-    return
-  end
-
-  -- /rogu timerX <sec>
-  local _, _, timerIndex = string.find(cmd, "^TIMER(%d+)$")
-  if timerIndex then
-    local instance = tonumber(timerIndex)
-    local n = tonumber(rest)
-    if ROGU.slots[instance] and n and n>=0 then
-      ROGU.slots[instance].cd = n
-      roarChat("instance"..tostring(instance).." cooldown "..tostring(n).."s")
-    else
-      roarChat("invalid instance or value")
-    end
-    return
-  end
-
-  if cmd == "WATCH" then
-    ROGU.watchMode = not ROGU.watchMode
-    roarChat("watch mode "..(ROGU.watchMode and "ON" or "OFF"))
-    return
-  end
-
+  -------------------------------------------------
+  -- [4.8]Maintenance: reset instances / reset cooldown gates
+  -------------------------------------------------
   if cmd == "RESET" then
     ROGU.slots = {}
     if ROGU.profile then
@@ -760,92 +843,30 @@ SlashCmdList["ROGU"] = function(raw)
     roarChat("all instances cleared")
     return
   end
-  -- /rogu resetcd reset all cooldowns
+
   if cmd == "RESETCD" then
-  local now = GetTime()
-
-  -- reset per-instance cooldown gates
-  for _, cfg in pairs(ROGU.slots or {}) do
-    if type(cfg) == "table" then
-      cfg.last = 0
+    -- reset per-instance cooldown gates
+    for _, cfg in pairs(ROGU.slots or {}) do
+      if type(cfg) == "table" then
+        cfg.last = 0
+      end
     end
-  end
 
-  -- reset fallback throttle too
-  if type(ROGU.fallback) == "table" then
-    ROGU.fallback.last = 0
-  end
-
-  -- reset reminder timers (optional but sane)
-  ROGU.lastRoar = 0
-  ROGU.lastReminder = 0
-
-  ROGU_SyncToProfile()
-  roarChat("cooldowns reset")
-  return
-end
-
-  if cmd == "INFO" then
-    roarChat("version: "..ADDON_VERSION)
-    roarChat("profile: "..tostring(ROGU.profileKey or "?"))
-    roarChat("enabled: "..tostring(ROGU.enabled))
-    roarChat("emotes in DB: "..tostring(table.getn(db.emotes)))
-
+    -- reset fallback throttle too
     if type(ROGU.fallback) == "table" then
-      local fb = ROGU.fallback
-      ROGU_SanitizeEmoteIDs(fb, db)
-      local fbids = ""
-      local k = 1
-      while fb.emoteIDs and fb.emoteIDs[k] do
-        if fbids ~= "" then fbids = fbids.."," end
-        fbids = fbids..tostring(fb.emoteIDs[k])
-        k = k + 1
-      end
-      if fbids == "" then fbids = "1" end
-      roarChat("fallback: enabled "..tostring(fb.enabled).." | cd "..tostring(fb.cd).."s | chance "..tostring(fb.chancePermille).."/1000 | emotes ["..fbids.."]")
+      ROGU.fallback.last = 0
     end
 
-    for i,cfg in pairs(ROGU.slots) do
-      ROGU_SanitizeEmoteIDs(cfg, db)
-      local ids = ""
-      for k=1,table.getn(cfg.emoteIDs or {}) do
-        if ids ~= "" then ids = ids.."," end
-        ids = ids..tostring(cfg.emoteIDs[k])
-      end
-      if ids == "" then ids = "1" end
-      roarChat("instance"..tostring(i)..": slot "..tostring(cfg.slot).." | chance "..tostring(cfg.chance).."% | cd "..tostring(cfg.cd).."s | emotes ["..ids.."]")
-    end
-    return
-  end
+    -- reset reminder timers
+    ROGU.lastRoar = 0
+    ROGU.lastReminder = 0
 
-  if cmd == "ON" then
-    ROGU.enabled = true
     ROGU_SyncToProfile()
-    roarChat("enabled")
-    return
-  end
-
-  if cmd == "OFF" then
-    ROGU.enabled = false
-    ROGU_SyncToProfile()
-    roarChat("disabled")
-    return
-  end
-
-  if cmd == "REXP" then
-    ROGU_ReportRestedXP()
-    return
-  end
-
-  if cmd == "ROAR" then
-    local token = ROGU_PickEmoteForCfg(ROGU.slots[1] or { emoteIDs={1} })
-    performEmote(token)
-    ROGU.lastRoar = GetTime()
+    roarChat("cooldowns reset")
     return
   end
 
   roarChat(" invite <1-10> | slotX <n> | chanceX <0-100> | timerX <sec> | emote <TOKEN> | emote list | emoteX <id|-id|clear|list> | watch | info | reset | resetcd | on | off | rexp | roar")
-
 end
 
 -------------------------------------------------
