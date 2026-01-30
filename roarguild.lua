@@ -485,7 +485,9 @@ local function ROGU_SyncToProfile()
   ROGU.profile.enabled = ROGU.enabled
   ROGU.profile.slots = ROGU.slots
   ROGU.profile.fallback = ROGU.fallback
+  ROGU.profile.stats = ROGU.stats
 end
+
 
 -------------------------------------------------
 -- [2.6] Features
@@ -726,12 +728,19 @@ SlashCmdList["ROGU"] = function(raw)
     roarChat("enabled: "..tostring(ROGU.enabled))
     roarChat("emotes in DB: "..tostring(table.getn(db.emotes)))
 
-    if type(ROGU.stats) == "table" then
-      local total = tonumber(ROGU.stats.total) or 0
-      local perMin = ROGU_StatsPerMinuteLastHour()
+  local s = ROGU.stats
+    if type(s) ~= "table" then
+      roarChat("stats: not initialized")
+    else
+      local total = tonumber(s.total) or 0
+      local perMin = 0
+      if ROGU_StatsPerMinuteLastHour then
+        perMin = ROGU_StatsPerMinuteLastHour()
+      end
       roarChat("total roars: "..tostring(total))
       roarChat("last hour: "..string.format("%.1f", perMin).." per minute")
     end
+
 
 
     if type(ROGU.fallback) == "table" then
