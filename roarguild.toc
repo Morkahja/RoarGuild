@@ -1,8 +1,7 @@
 ## Interface: 11200
 ## Title: RoarGuild
-## Notes: Battle emotes on action slots with optional global trigger.
-## Author: babunigaming
-## Version: 1.31
+## Notes: Triggers battle emotes when you press specific action bar slots. Supports multiple per-character profiles and per-slot cooldown/chance.
+## Version: 1.32
 ## SavedVariables: ROGUDB
 
 roarguild.lua
