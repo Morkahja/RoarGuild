@@ -1,4 +1,4 @@
--- RoarGuild v1.3 (GodBod removed, Option C profiles)
+-- RoarGuild v1.32 (GodBod removed, Option C profiles)
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
 -- SavedVariables: ROGUDB
@@ -6,7 +6,7 @@
 -------------------------------------------------
 -- [0] Constants
 -------------------------------------------------
-local ADDON_VERSION = "1.3"
+local ADDON_VERSION = "1.32"
 
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
@@ -1056,4 +1056,3 @@ f:SetScript("OnEvent", function(_, event)
     ROGU_SyncToProfile()
   end
 end)
-
