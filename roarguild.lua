@@ -248,7 +248,7 @@ local inviteText = {
   "<ROAR> Gold fades. Reputation echoes.   Rixle Geargrin, Kezan (before the Cataclysm)",
   "<ROAR> A shared feast is the best investment.   Vexa Quickcoin, Booty Bay (Steamwheedle expansion years)",
 
-  "<ROAR> I have watched banners burn and crowns turn to dust, yet laughter shared by friends endured longer than any empire. That is the roar worth guarding.   Cedric Ashborne, the old wine quarter of Lordaeron, during the quiet decline before the royal courts hardened",
+  "<ROAR> I have watched banners burn and crowns turn to dust, yet laughter shared by friends endured longer than any empire. That is the roar worth guarding.   Cedric Ashborne, the old wine quarter of Lordaeron, before the royal courts hardened",
   "<ROAR> When suspicion crept into every conversation, we chose kindness anyway, and it carried us through the years that followed.   Maelin Riverwind, Stormwind canals, in the uneasy rebuilding before the city truly felt safe again",
   "<ROAR> Stone does not rush, and neither should we. The deepest marks are left by those who walk together and return often.   Thorgar Deepanvil, the lower forges of Ironforge, while clan banners still hung side by side",
   "<ROAR> A hearth kept lit can hold a clan together longer than any fortress wall. I learned that during winters when food was scarce but laughter was not.   Brynja Hearthmantle, Dun Morogh foothills, during the long resettlement years",
