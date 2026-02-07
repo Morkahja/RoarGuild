@@ -197,19 +197,19 @@ local inviteText = {
   "<ROAR> We laugh, we cheer, good friends are near come join us now, your spot is here.",
   "<ROAR> The world feels wide when shared inside come join our pride and enjoy the ride.",
 
-  "<ROAR> To ancient songs remembered, blades kept keen, and dignity carried even in exile may our cups shine as bright as the legacy we refuse to forget.",
+  "<ROAR> To ancient songs remembered, blades kept keen, and dignity carried even in exile. May our cups shine as bright as the legacy we refuse to forget.",
   "<ROAR> To vigilance without bitterness, honor without a homeland, and nights where old histories rest quietly beside new friendships.",
-  "<ROAR> To deals sealed with a grin, risks taken with confidence, and feasts funded by clever timing gold comes and goes, but a good celebration pays dividends.",
+  "<ROAR> To deals sealed with a grin, risks taken with confidence, and feasts funded by clever timing. Gold comes and goes, but a good celebration pays dividends.",
   "<ROAR> To sharp instincts, quicker tongues, and victories toasted loud before the numbers are even counted.",
-  "<ROAR> To shields held high through long marches, boots worn thin on old roads, and ale earned the honest way may our paths stay winding and our laughter outlast the night.",
+  "<ROAR> To shields held high through long marches, boots worn thin on old roads, and ale earned the honest way. May our paths stay winding and our laughter outlast the night.",
   "<ROAR> To songs sung after battle, friends gathered close at the table, and stories retold until they grow warmer with every telling raise your glass.",
-  "<ROAR> To stone halls remembered, strong arms still steady, and mugs that are never empty for long may the echoes of our laughter rival any mountain hall.",
+  "<ROAR> To stone halls remembered, strong arms still steady, and mugs that are never empty for long. May the echoes of our laughter rival any mountain hall.",
   "<ROAR> To hearthfires glowing late, old tales shared freely, and victories celebrated with open smiles and full cups.",
   "<ROAR> To ancient paths walked once more, moonlit camps beneath quiet stars, and the patience that lets wonder unfold at its own pace.",
   "<ROAR> To starlight through the leaves, calm breaths between battles, and moments of stillness shared among trusted companions.",
   "<ROAR> To clever plans that somehow worked, spectacular mistakes we still laugh about, and triumphs worth rebuilding half the camp for.",
   "<ROAR> To sparks of inspiration, quick hands, bright minds, and feasts frequently interrupted by new ideas.",
-  "<ROAR> To strength proven when it mattered, honor kept both in battle and at the table, and meat roasted exactly as it should be.",
+  "<ROAR> To strength proven when it mattered, honor kept both in battle and at the table and meat roasted exactly as it should be.",
   "<ROAR> To scars earned honestly, bonds forged in hardship, and mugs emptied without hesitation or regret.",
   "<ROAR> To spirits who guide our steps, the land that carries us forward, and journeys shared in balance and respect.",
   "<ROAR> To steady hearts, quiet wisdom, and celebrations that feel less like victory and more like home.",
@@ -269,7 +269,7 @@ local inviteText = {
   "<ROAR> Tradition survives not by preservation alone, but by allowing it to breathe in new voices.   Caelith Dawnward, Silvermoon outer gardens, during the uneasy years of isolation",
   "<ROAR> Exile strips away many things, but grace survives when carried together instead of alone.   Seralyth Windmere, Theramore docks, during the years of cautious coexistence",
   "<ROAR> Gold vanishes faster than memory. Reputation lingers, whether you plan for it or not.   Grizzle Vaultspark, Kezan counting halls, late Steamwheedle boom",
-  "<ROAR> A shared feast outlasts any contract. Feed people well, and they remember your name. f Kexxa Coinwhistle, Booty Bay lower decks, during the height of open trade routes"
+  "<ROAR> A shared feast outlasts any contract. Feed people well, and they remember your name.  Kexxa Coinwhistle, Booty Bay lower decks, during the height of open trade routes"
 }
 
 
