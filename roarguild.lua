@@ -176,11 +176,11 @@ local inviteText = {
   "<ROAR> We believe joy belongs at the center of play and we invite you to join us.",
   "<ROAR> Looking for a warm, relaxed guild with loud celebrations? Come join ROAR.",
 
-  "<ROAR> We roam, we explore, we laugh and adore come join the pride and roar some more.",
-  "<ROAR> Not in a rush, just wander and cheer come join us friend, you are welcome right here.",
-  "<ROAR> We quest and we play, then roar at the day come join our pride and stay your way.",
-  "<ROAR> Through valleys and lore, we wander some more come join the adventure and let out a roar.",
-  "<ROAR> From sunrise to night, we share the delight come join ROAR and play it just right.",
+  "<ROAR> We roam, we explore, we laugh and adore, come join the pride and roar some more.",
+  "<ROAR> Not in a rush, just wander and cheer, come join us friend, you are welcome right here.",
+  "<ROAR> We quest and we play, then roar at the day, come join our pride and stay your way.",
+  "<ROAR> Through valleys and lore, we wander some more, come join the adventure and let out a roar.",
+  "<ROAR> From sunrise to night, we share the delight, come join ROAR and play it just right.",
 
   "<ROAR> Warning: joining may cause spontaneous roars, shared adventures, and unexpected joy. You are welcome to join.",
 
