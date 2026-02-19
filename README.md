@@ -4,10 +4,11 @@
 **Author:** babunigaming
 **Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
 
-RoarGuild adds a small, automatic chance for your character to express themselves through emotes during normal play, with optional systems that expand this into a fully configurable expression addon.
+RoarGuild adds a small chance for your character to /roar when pressing actionslots, with the option to fully customize every actionslot with it's own chance, timer and list of emotes. 
 
-RoarGuild is flavor-first.
-It reacts to *what you actually do* in combat and play — no macros, no rotation pollution, no artificial timers.
+RoarGuild is flavor-first, fun feature addon that aims to bring a bit of life to the world.
+
+It also acts as a tool for roar-guildmembers to recruit new members by sending roar-guild flavored welcome messages to a chosen chat -channel.
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -18,7 +19,7 @@ It reacts to *what you actually do* in combat and play — no macros, no rotatio
 * Hooks directly into real action bar presses
 * Uses *instances* bound to specific action bar slots
 * Each instance has its own cooldown, chance, and emote pool
-* Emotes are fully configurable and no longer hardcoded
+* Emotes are fully configurable, add/remove
 * A shared **master emote list** is maintained per account
 * Each instance can randomly pick from multiple assigned emotes
 * Default and guaranteed fallback emote is **ROAR**
@@ -36,7 +37,7 @@ It reacts to *what you actually do* in combat and play — no macros, no rotatio
 RoarGuild is not about optimization.
 It is about *presence*.
 
-It treats your character as a living participant in the world, not a silent executor of rotations. Emotes happen because you act — not because a timer fired.
+It treats your character as a living participant in the world. Emotes happen because you act.
 
 The system is intentionally lightweight, transparent, and predictable where it matters, and slightly chaotic where it adds charm.
 
