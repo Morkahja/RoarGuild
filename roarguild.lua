@@ -215,47 +215,72 @@ local inviteText = {
   "<ROAR> To clever tricks pulled off just in time, drums beaten late into the night, and stories that grow wilder with every retelling.",
   "<ROAR> To dancing firelight, joyful chaos, and nights that stretch on until dawn finds us still laughing.",
 
-  "<ROAR> Joy shared outlives empires. I have seen kingdoms fall, yet laughter carried farther than banners ever did.   Alaric Dawnsworn, Lordaeron (before the First War)",
-  "<ROAR> A people endure not by conquest, but by choosing kindness when fear would be easier.   Elayne Fairwind, Stormwind (after the Second War)",
-  "<ROAR> Stone remembers patience. Those who walk together leave deeper marks than those who rush alone.   Brottan Stonevein, Ironforge (War of the Three Hammers)",
-  "<ROAR> Hearthfire binds stronger than steel. A clan that laughs together does not fracture.   Hilda Ambermantle, Dun Morogh (after the Second War)",
-  "<ROAR> The stars teach us this: beauty needs no urgency to matter.   Thalanor Moonwhisper, Ashenvale (before the First War)",
-  "<ROAR> Balance is not silence, but knowing when to raise your voice for another.   Lyssera Starbloom, Darnassus (after the Third War)",
-  "<ROAR> Curiosity builds bridges where fear builds walls.   Professor Brizwick Mekkatorn, Gnomeregan (as the fall begins)",
-  "<ROAR> Invention shines brightest when shared freely, not hoarded.   Tilda Sparkgear, New Tinkertown (during the evacuation)",
-  "<ROAR> Strength without restraint is noise. Strength with respect becomes a roar worth hearing.   Kargul Stonefist, Nagrand (before the First War)",
-  "<ROAR> Bonds forged in hardship outlast any battlefield victory.   Draka Ironwill, Alterac Highlands (during the internment)",
-  "<ROAR> The land carries us all. Walk it with care, and it will remember you kindly.   Elder Seer Ruun, Mulgore (founding of Thunder Bluff)",
-  "<ROAR> Community is the truest form of strength.   Anaya Plainsong, Mulgore (after the Third War)",
-  "<ROAR> We endure by choosing meaning over despair.   Morlen Ashbound, Capital City (during the fall of Lordaeron)",
-  "<ROAR> Even borrowed time deserves celebration.   Selindra Blackveil, Undercity (shortly after its founding)",
-  "<ROAR> A story shared travels farther than any war drum.   Zul kan Firespinner, Durotar (while constructing Orgrimmar)",
-  "<ROAR> Joy keeps the spirits listening.   Shadra Spiritcall, Echo Isles (after the liberation)",
-  "<ROAR> Tradition lives only when it welcomes new voices.   Arathiel Sunborne, Silvermoon (before the Scourge invasion)",
-  "<ROAR> Grace survives exile when carried together.   Velanna Dawncrest, Theramore (after the Third War)",
-  "<ROAR> Gold fades. Reputation echoes.   Rixle Geargrin, Kezan (before the Cataclysm)",
-  "<ROAR> A shared feast is the best investment.   Vexa Quickcoin, Booty Bay (Steamwheedle expansion years)",
+  "<ROAR> Ask the question, cross the span, build bright bridges where you stand. Curiosity lights the door, step inside and roar once more.",
 
-  "<ROAR> I have watched banners burn and crowns turn to dust, yet laughter shared by friends endured longer than any empire. That is the roar worth guarding.   Cedric Ashborne, the old wine quarter of Lordaeron, before the royal courts hardened",
-  "<ROAR> When suspicion crept into every conversation, we chose kindness anyway, and it carried us through the years that followed.   Maelin Riverwind, Stormwind canals, in the uneasy rebuilding before the city truly felt safe again",
-  "<ROAR> Stone does not rush, and neither should we. The deepest marks are left by those who walk together and return often.   Thorgar Deepanvil, the lower forges of Ironforge, while clan banners still hung side by side",
-  "<ROAR> A hearth kept lit can hold a clan together longer than any fortress wall. I learned that during winters when food was scarce but laughter was not.   Brynja Hearthmantle, Dun Morogh foothills, during the long resettlement years",
-  "<ROAR> The stars cross the sky without haste, yet they never lose their way. We once shaped our lives by that rhythm.   Aerendir Silvershade, Ashenvale glades, during the long vigil before the forests grew crowded",
-  "<ROAR> Balance is not silence, but knowing when to stand still and when to speak so another is not alone.   Elunara Softbloom, Darnassus terraces, in the first calm seasons after the great return to Kalimdor",
-  "<ROAR> Curiosity saved us more times than caution ever did. Fear builds walls, questions build exits.   Pindlewick Cogwhisper, Gnomeregan design wing, in the months of ignored warnings and overconfidence",
-  "<ROAR> An idea locked away is already half broken. Share it, test it, laugh about it, then improve it together.   Zella Sparkshift, Gnomeregan reclamation facility, during the years of rebuilding with salvaged hands",
-  "<ROAR> Strength without restraint is just noise. Strength tempered by respect becomes a roar others will answer.   Rokan Ironjaw, Nagrand plains, before the rise of the Old Horde",
-  "<ROAR> Hardship forges bonds no victory ever could. Those bonds carried us through chains, camps, and quiet resolve.   Varsha Grimwill, the internment stockades, during the internment years",
-  "<ROAR> The land carries every footstep we take. Treat it as kin, not resource, and it will carry you farther than pride ever could.   Elder Hanu Stonesinger, the mesas of Mulgore, while the first lifts to Thunder Bluff were tested",
-  "<ROAR> Community is not measured in numbers, but in how gently we hold one another upright.   Lira Plainsong, Thunder Bluff central rise, during the early days of shared tribal council",
-  "<ROAR> Despair tempts us to endure alone, but meaning is found when we choose to endure together.   Corvin Duskmantle, the inner districts of Lordaeron, as familiar streets emptied",
-  "<ROAR> Time may be borrowed, but joy can still be claimed. I chose laughter, even when others called it foolish.   Nyssa Gloomveil, Undercity upper ring, during the first years of self-rule",
-  "<ROAR> A story told around a fire travels farther than any war drum. Share it well, and it will return to you changed.   Zekhan Emberdrum, Durotar work camps, while Orgrimmar was still dust and scaffolds",
-  "<ROAR> When the drums quiet and the spirits listen, joy is the offering they accept most readily.   Mala Spiritbinder, Echo Isles, after Zalazanes fall",
-  "<ROAR> Tradition survives not by preservation alone, but by allowing it to breathe in new voices.   Caelith Dawnward, Silvermoon outer gardens, during the uneasy years of isolation",
-  "<ROAR> Exile strips away many things, but grace survives when carried together instead of alone.   Seralyth Windmere, Theramore docks, during the years of cautious coexistence",
-  "<ROAR> Gold vanishes faster than memory. Reputation lingers, whether you plan for it or not.   Grizzle Vaultspark, Kezan counting halls, late Steamwheedle boom",
-  "<ROAR> A shared feast outlasts any contract. Feed people well, and they remember your name.  Kexxa Coinwhistle, Booty Bay lower decks, during the height of open trade routes"
+"<ROAR> Share your craft and share your spark, let no bright idea stay in the dark. Laugh and build and try anew, we have a place prepared for you.",
+
+"<ROAR> Strength with respect rings clear and wide, a steady thunder none can hide. Bring that sound and make it soar, join your voice within the ROAR.",
+
+"<ROAR> Bonds in trial, bonds in flame, outlast glory, outlast fame. Walk with us through thick and thin, and find the pride that waits within.",
+
+"<ROAR> Tread the land with mindful stride, let care and courage be your guide. The world remembers gentle might, come roam with us in shared delight.",
+
+"<ROAR> True strength grows where hearts align, in shared laughter over ale and time. Stand together, firm and free, and add your voice to our company.",
+
+"<ROAR> Choose a meaning bright and clear, hold it close and keep it near. In darkest hours we still explore, come shape the tale we are living for.",
+
+"<ROAR> Borrowed hours still can shine, lift a mug and cross the line. If joy calls out across the floor, answer back with a fearless roar.",
+
+"<ROAR> Tell your story by the flame, let it wander, let it change. Stories shared grow strong and wide, come speak yours beside the pride.",
+
+"<ROAR> When drums fall still and night grows deep, joy is what the spirits keep. Bring your laughter, bright and pure, and let it echo ever sure.",
+
+"<ROAR> Old traditions breathe and grow when new voices join the flow. Bring your song and let it ring, add your note to everything.",
+
+"<ROAR> Grace is carried hand in hand, across each sea and shifting sand. Walk with us through loss and lore, and find your place within the ROAR.",
+
+"<ROAR> Gold may fade and coins may fall, but good names echo through it all. Build your tale with steady core, and let it thunder with the ROAR.",
+
+"<ROAR> A shared feast and open door, brightens nights and offers more. Sit and stay and take your part, bring your hunger and your heart.",
+
+"<ROAR> Crowns may crumble into dust, but laughter shared is iron trust. Come forge your joy in flame and ale, and let it outlast any tale.",
+
+"<ROAR> When doubt once whispered in the street, we answered warm and kept our feet. Choose the road where kindness leads, and walk with us in word and deeds.",
+
+"<ROAR> Stone stands firm and so do we, returning often, faithfully. Leave your mark where friends endure, the deeper path is slow and sure.",
+
+"<ROAR> Keep the fire against the cold, let stories rise and hands be bold. In leaner years and brighter days, we gather close and lift our praise.",
+
+"<ROAR> The sky moves slow yet never strays, so shape your life in wandering ways. No rush required, no race to run, just steady hearts and shared sun.",
+
+"<ROAR> Stand in silence, speak with care, lift another from despair. In balanced steps and voices strong, we find the place where we belong.",
+
+"<ROAR> Ask and build and dare to try, let bright ideas multiply. Shared and tested, shaped by cheer, that is how we gather here.",
+
+"<ROAR> Temper strength with open hand, let respect in power stand. When your voice rings true and deep, others wake from guarded sleep.",
+
+"<ROAR> Trials passed and hardships crossed, forge a bond no war has lost. Through every chain and shadowed year, we choose to gather rather than fear.",
+
+"<ROAR> Walk as kin upon this land, treat its soil with careful hand. It will carry you in turn, farther than pride alone could earn.",
+
+"<ROAR> Community is quiet might, lifting each through darkest night. Stand upright and help another, here we stand as sister, brother.",
+
+"<ROAR> Meaning grows where hearts entwine, shared endurance, shared design. Walk together, side by side, and find your strength within the pride.",
+
+"<ROAR> Time is brief but joy is bright, claim it boldly in the night. Laugh out loud and stand up tall, let your voice be heard by all.",
+
+"<ROAR> Speak your tale by ember glow, let it wander, let it grow. Around the fire your words will soar, and return to you once more.",
+
+"<ROAR> When drums fall still and spirits hear, joy is what draws them near. Bring your cheer and let it pour, answer back with ROAR on ROAR.",
+
+"<ROAR> Let old customs breathe and bend, welcome every newfound friend. In fresh voices, strong and clear, tradition lives and lingers here.",
+
+"<ROAR> Across the tide and through the gale, shared grace will not grow pale. Walk with us through shifting lore, and find your home within the ROAR.",
+
+"<ROAR> Coins may scatter, markets sway, but good renown will always stay. Build it bright in tale and deed, and let your echo travel speed.",
+
+"<ROAR> Share your bread and pour the drink, that is stronger than you think. Feasts remembered, bonds well worn, that is how true names are born.",
+
 }
 
 
