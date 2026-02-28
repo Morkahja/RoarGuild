@@ -112,7 +112,7 @@ local inviteText = {
   "<ROAR> From dawn to night, the vibes feel right, come join the pride and play it light.",
   "<ROAR> Not here to grind, but unwind? Come join ROAR and share the time.",
   "<ROAR> We laugh, we cheer, good friends are near, come join us now, your spot is here.",
-  "<ROAR> The world feels wide when shared inside, come join our pride and enjoy the ride.",
+  "<ROAR> The world feels wide when shared inside, come join our pride and enjoy the ride."
 }
 
 
