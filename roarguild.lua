@@ -126,7 +126,7 @@ local inviteText = {
 "<ROAR> To wandering thoughts, sudden joy, and the kind of laughter that spills ale.",
 "<ROAR> If you play to feel the world under your boots, you will not drink alone here.",
 "<ROAR> Patience, humor, and a roar at the end of a hard earned tale. That is how a night should close.",
-"<ROAR> We raise mugs to effort, to presence, and to laughter shared! And we roar!
+"<ROAR> We raise mugs to effort, to presence, and to laughter shared! And we roar!",
 "<ROAR> To those who let moments breathe and let victories echo until dawn.",
 "<ROAR> Play gently, explore deeply, and roar honestly. Nothing less.",
 "<ROAR> Many paths, many paces, one steady spirit binding us together.",
