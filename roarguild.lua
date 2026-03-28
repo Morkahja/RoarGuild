@@ -122,7 +122,7 @@ local inviteText = {
 "<ROAR> To a pride shaped by curiosity and kindness, and by memories that taste better with time.",
 "<ROAR> Azeroth is a place to walk, not a list to scratch through. So walk it well and walk it together.",
 "<ROAR> From quiet evenings to roaring triumphs, we share the whole rhythm of it. None of it wasted.",
-"<ROAR> Play as craft, not performance. Let your roar be real!,
+"<ROAR> Play as craft, not performance. Let your roar be real!",
 "<ROAR> To wandering thoughts, sudden joy, and the kind of laughter that spills ale.",
 "<ROAR> If you play to feel the world under your boots, you will not drink alone here.",
 "<ROAR> Patience, humor, and a roar at the end of a hard earned tale. That is how a night should close.",
