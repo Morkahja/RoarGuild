@@ -660,8 +660,7 @@ SlashCmdList["ROGU"] = function(raw)
   end
 
   if cmd == "ROAR" then
-    local token = ROGU_PickEmoteForCfg(ROGU.slots[1] or { emoteIDs={1} })
-    performEmote(token)
+    performEmote("ROAR")
     if ROGU_StatsRecordEmote then
       ROGU_StatsRecordEmote()
     end
