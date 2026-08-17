@@ -1,6 +1,6 @@
 **🦁 RoarGuild Addon**
 
-**Version:** 1.32
+**Version:** 1.33
 **Author:** babunigaming
 **Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
 
@@ -9,6 +9,8 @@ RoarGuild adds a small chance for your character to /roar when pressing actionsl
 RoarGuild is flavor-first, fun feature addon that aims to bring a bit of life to the world.
 
 It also acts as a tool for roar-guildmembers to recruit new members by sending roar-guild flavored welcome messages to a chosen chat -channel.
+
+It includes **Roarboard**, a lightweight shared guild message board. Use `/roarboard <message>` to post, `/roarboard` to open it, and `/roarboard sync` to request a resync through the `roarboard` channel. Posts are kept for seven days after their last activity; clicking **Roar** on a post adds a reaction and refreshes that activity.
 
 ━━━━━━━━━━━━━━━━━━
 

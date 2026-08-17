@@ -1,4 +1,4 @@
--- RoarGuild v1.32 
+-- RoarGuild v1.33
 -- Vanilla / Turtle WoW 1.12
 -- Lua 5.0-safe
 -- SavedVariables: ROGUDB
@@ -6,7 +6,7 @@
 -------------------------------------------------
 -- [0] Constants
 -------------------------------------------------
-local ADDON_VERSION = "1.32"
+local ADDON_VERSION = "1.33"
 
 local ROAR_REMINDER_INTERVAL = 420
 local ROAR_REMINDER_CD = 73
@@ -77,57 +77,31 @@ local ROGU = {
 -- [2.1] Data Pools
 -------------------------------------------------
 local inviteText = {
-"<ROAR> Friendly hearts and curious minds, we walk for wonder not for signs, no counting meters no racing clocks, just steady boots on winding rocks, when moments bloom in ember light, we lift our voices to the night.",
-"<ROAR> That rolling sound across the plain is not thundercloud nor storm nor rain, it is laughter ringing bright and raw from quests well fought and things we saw, if that deep echo feels like home, step near the fire no need to roam.",
-"<ROAR> We hunt for stories not for speed, for treasure wrapped in laugh and deed, no pressure set no breath held tight, just open road and hearthfire light, and when the tale turns bold and bright, we roar it proudly through the night.",
-"<ROAR> The roar gathers, mugs held high, for fallen foes and painted sky, for clumsy pulls and epic loot, for triumph earned in dusty boot, steady hearts and open door, all are welcome to the roar.",
-"<ROAR> Casual steps and thunder cheer, shared old tales and friends held near, if wandering roads make your spirit sing and noise feels like a natural thing, then by the forge and foaming glass you have found your kin at last.",
-"<ROAR> Quests and caverns blades and lore, battlefields and tavern floor, stories stirred in iron stew, we play for meaning deep and true, not to impress with shining name but to set the coals of joy aflame.",
-"<ROAR> If you sit for sky and song, for quiet paths that wind along, for wonder bright and laughter free, then pull a chair and sit with me, no ledger tallied no score to chase, just world enough and shared hearthspace.",
-"<ROAR> Inspire first and boast not loud, stand steady not above the crowd, curious souls in warm embrace, shared adventure unhurried pace, and when the tankards strike the floor we answer back with one great roar.",
-"<ROAR> Explorers bright and wanderers wide, bring your craft and stand beside, respect the road create with care, let your story fill the air, lift your voice and let it soar, let Azeroth resound with ROAR.",
-"<ROAR> Curiosity in common hand, respect the ground on which we stand, shared stories told in firelight glow, step by step the long roads go, if that same taste is in your core, come walk the miles with ROAR.",
-"<ROAR> No rushing drum no frantic cry, we let the seasons wander by, we roam we toast we laugh out loud, unburdened by the pressing crowd, good company and spirits sure and roars that echo strong and pure.",
-"<ROAR> For those who lose themselves with grace in forest shade or desert space, who read the lines and hear the song and do not mind the road is long, there is story ale and open door and always room for one more roar.",
-"<ROAR> We chase the spark in fleeting glance, in dungeon crawl and roadside chance, not numbers tallied cold and dry but laughter flung against the sky, if moments matter more than score then you belong with ROAR.",
-"<ROAR> Azeroth is living ground not boxes checked nor trophies found, so walk it slow let wonder start and roar when fire fills your heart, for when a moment turns out fine we mark it loud with ale and sign.",
-"<ROAR> From hushed twilight to cheering flame we share the rhythm just the same, soft footfalls battle cries, warm embraces open skies, in every tone from low to high together let our voices fly.",
-"<ROAR> Explorers crafters blades held fast, storytellers of future and past, collectors dreamers gentle might, all find a seat in hearthfire light, pull a chair and stay a while, we roar in grief we roar in smile.",
-"<ROAR> At your own pace the road may bend with steady kin and honest friend, share the weight and share the view, let the wide world open to you, if that is how you choose to soar then step your boots inside our door.",
-"<ROAR> Small triumphs vast victories, quiet glances grand histories, if it stirs the soul at all we answer with a thunder call, add your voice both fierce and clear and make the mountains lean to hear.",
-"<ROAR> Adventure shared tastes rich and deep like ale long brewed and well earned sleep, so wander wide where wild winds sweep and promises are ours to keep, raise your mug and claim your part, roar from iron roast and heart.",
-
-
-"<ROAR> We roam, we explore, we laugh and adore, come join the pride and roar some more.",
-"<ROAR> Not in a rush, just wander and cheer, come join us friend, you are welcome right here.",
-"<ROAR> We quest and we play, then roar at the day, come join our pride and stay your way.",
-"<ROAR> Through valleys and lore, we wander some more, come join the adventure and let out a roar.",
-"<ROAR> From sunrise to night, we share the delight, come join ROAR and play it just light.",
-"<ROAR> Warning: joining may cause spontaneous roars, shared adventures, and unexpected joy. You are welcome!",
-"<ROAR> No need to race, just find your pace, come join our guild, this is the place.",
-"<ROAR> Through hill and shore, we seek the lore, come join the fun and roar once more.",
-"<ROAR> We take it slow, let stories grow, come join ROAR and let it flow.",
-  
-"<ROAR> Ask the question, cross the span, build bright bridges where you stand. Curiosity lights the door, step inside and roar some more.",
-"<ROAR> Strength with respect rings clear and wide, a steady thunder none can hide. Bring that sound and make it soar, join your voice within the ROAR.",
-"<ROAR> Bonds in trial, bonds in flame, outlast glory, outlast fame. Walk with us through thick and thin, and find the joy that waits within.",
-"<ROAR> Tread the land with mindful stride, let care and courage be your guide. The world remembers gentle might, come roam with us in shared delight.",
-"<ROAR> Choose a meaning bright and clear, hold it close and keep it near. In darkest hours we still explore, come shape the tale we are living for.",
-"<ROAR> Borrowed hours still can shine, lift a mug and cross the line. If joy calls out across the floor, answer back with a fearless roar.",
-"<ROAR> Tell your story by the flame, let it wander, let it change. Stories shared grow strong and wide, come speak yours beside the light.",
-"<ROAR> When drums fall still and night grows deep, joy is what the spirits keep. Bring your laughter, bright and pure, and let it echo ever sure.",
-"<ROAR> Old traditions breathe and grow when new voices join the flow. Bring your song and let it ring, add your note to everything.",
-"<ROAR> Grace is carried hand in hand, across each sea and shifting sand. Walk with us through loss and lore, and find your place within the ROAR.",
-
-"<ROAR> Gold may fade and coins may fall, but good names echo through it all. Build your tale with steady core, and let it thunder with the ROAR.",
-"<ROAR> A shared feast and open door, brightens nights and offers more. Sit and stay and take your part, bring your hunger and your heart.",
-"<ROAR> Crowns may crumble into dust, but laughter shared is iron trust. Come forge your joy in flame and ale, and let it outlast any tale.",
-"<ROAR> When doubt once whispered in the street, we answered warm and kept our feet. Choose the road where kindness leads, and walk with us in word and deeds.",
-"<ROAR> Stone stands firm and so do we, returning often, faithfully. Leave your mark where friends endure, the deeper path is slow and sure.",
-"<ROAR> Keep the fire against the cold, let stories rise and hands be bold. In leaner years and brighter days, we gather close and lift our praise.",
-"<ROAR> The sky moves slow yet never strays, so shape your life in wandering ways. No rush required, no race to run, just steady hearts and shared sun.",
-"<ROAR> Stand in silence, speak with care, lift another from despair. In balanced steps and voices strong, we find the place where we belong.",
-"<ROAR> Ask and build and dare to try, let bright ideas multiply. Shared and tested, shaped by cheer, that is how we gather here."
+"<ROAR> We play some WoW, we chat a bit too; if you like to roar, we would like to meet you.",
+"<ROAR> People from all over come here to play; we kill a few mobs and roar all day.",
+"<ROAR> Need folks for a quest or a run? Come to ROAR, we are here for fun.",
+"<ROAR> We are called ROAR; we play the game and roar. That is really all there is to it.",
+"<ROAR> We play when we can and help now and then; come roar with a few new friends.",
+"<ROAR> We run some dungeons, whatever the score; after a boss goes down, we usually roar.",
+"<ROAR> No big speech from us, just a simple invite: play some WoW and roar if it feels right.",
+"<ROAR> From different time zones, we still find a way to log in, play a bit, and stay.",
+"<ROAR> We quest, craft, and fight our way through; when a hard fight ends, we give a roar too.",
+"<ROAR> Looking for friendly people to play with? Come say hello and give ROAR a try.",
+"<ROAR> We wipe now and then, then queue up once more; a good wipe is still worth a roar.",
+"<ROAR> Whatever you do in WoW is fine; there may be someone online at the same time.",
+"<ROAR> We kill some mobs and look for good loot; when something nice drops, we roar in salute.",
+"<ROAR> You do not need to be the best in the game; just be yourself, we are all here for the same.",
+"<ROAR> We like the game, the company, and lore; mostly we like a good silly roar.",
+"<ROAR> If a nice dungeon run sounds good to you, come join ROAR and bring a friend or two.",
+"<ROAR> It is pretty simple: we play and we kill; a friendly loud roar is part of the deal.",
+"<ROAR> Meet people from far and near, then go knock over some ogres with cheer.",
+"<ROAR> Got time for a quest or a dungeon run? Come along with ROAR and have some fun.",
+"<ROAR> We are here for the game and the people we meet; a little roar now and then makes it complete.",
+"<ROAR> Big wins, bad pulls, or a rare drop in store; each is a good enough reason to roar.",
+"<ROAR> We play at our own pace, with no need to rush; join ROAR if you want a friendly bunch.",
+"<ROAR> We are not very serious, that much is clear; but a good loud roar is welcome here.",
+"<ROAR> Come for a group run, stay for some fun; we will probably roar when the run is done.",
+"<ROAR> If you want friendly folks to play with some more, come say hello to ROAR."
 }
 
 
@@ -427,6 +401,326 @@ local function ROGU_ReportRestedXP()
   if bubbles > 30 then bubbles = 30 end
 
   roarChat("Rest: "..bubbles.." bubbles ("..r.." XP)")
+end
+
+-------------------------------------------------
+-- [2.6.5] Roarboard: shared guild message board
+-------------------------------------------------
+local RB_CHANNEL = "roarboard"
+local RB_PREFIX = "RB1"
+local RB_MAX_TEXT = 180
+local RB_EXPIRY = 7 * 24 * 60 * 60
+local RB_VISIBLE_ROWS = 12
+
+local Roarboard = {
+  db = nil,
+  selectedID = nil,
+  offset = 0,
+  frame = nil,
+  rows = nil,
+  title = nil,
+  body = nil,
+  date = nil,
+  count = nil,
+}
+
+local function RB_Now()
+  if time then return time() end
+  return math.floor(GetTime())
+end
+
+local function RB_Escape(s)
+  s = tostring(s or "")
+  s = string.gsub(s, "%%", "%%25")
+  s = string.gsub(s, "|", "%%7C")
+  s = string.gsub(s, "\r", " ")
+  s = string.gsub(s, "\n", " ")
+  return s
+end
+
+local function RB_Unescape(s)
+  s = tostring(s or "")
+  s = string.gsub(s, "%%7[Cc]", "|")
+  s = string.gsub(s, "%%25", "%%")
+  return s
+end
+
+local function RB_EnsureDB()
+  local db = ROGU_EnsureDB()
+  if type(db.roarboard) ~= "table" then db.roarboard = {} end
+  local rb = db.roarboard
+  if type(rb.posts) ~= "table" then rb.posts = {} end
+  if type(rb.seen) ~= "table" then rb.seen = {} end
+  Roarboard.db = rb
+  return rb
+end
+
+local function RB_Prune()
+  local rb = RB_EnsureDB()
+  local cutoff = RB_Now() - RB_EXPIRY
+  for id, post in pairs(rb.posts) do
+    if type(post) ~= "table" or (tonumber(post.lastActivity) or tonumber(post.timestamp) or 0) < cutoff then
+      rb.posts[id] = nil
+      if Roarboard.selectedID == id then Roarboard.selectedID = nil end
+    end
+  end
+  for id, stamp in pairs(rb.seen) do
+    if (tonumber(stamp) or 0) < cutoff then rb.seen[id] = nil end
+  end
+end
+
+local function RB_PostList()
+  RB_Prune()
+  local posts = {}
+  for _, post in pairs(RB_EnsureDB().posts) do
+    if type(post) == "table" then
+      posts[table.getn(posts) + 1] = post
+    end
+  end
+  table.sort(posts, function(a, b)
+    return (tonumber(a.lastActivity) or tonumber(a.timestamp) or 0) > (tonumber(b.lastActivity) or tonumber(b.timestamp) or 0)
+  end)
+  return posts
+end
+
+local function RB_ChannelNumber()
+  local ch = GetChannelName and GetChannelName(RB_CHANNEL) or 0
+  return tonumber(ch) or 0
+end
+
+local function RB_JoinChannel()
+  if RB_ChannelNumber() < 1 and JoinChannelByName then
+    JoinChannelByName(RB_CHANNEL)
+  end
+end
+
+local function RB_Send(payload)
+  RB_JoinChannel()
+  local ch = RB_ChannelNumber()
+  if ch < 1 then
+    roarChat("Roarboard channel is not ready. Try again in a moment.")
+    return false
+  end
+  SendChatMessage(payload, "CHANNEL", nil, ch)
+  return true
+end
+
+local function RB_RefreshUI()
+  if not Roarboard.frame or not Roarboard.frame:IsShown() then return end
+  local posts = RB_PostList()
+  local maxOffset = table.getn(posts) - RB_VISIBLE_ROWS
+  if maxOffset < 0 then maxOffset = 0 end
+  if Roarboard.offset > maxOffset then Roarboard.offset = maxOffset end
+  if Roarboard.offset < 0 then Roarboard.offset = 0 end
+
+  local selected = nil
+  local i = 1
+  while i <= RB_VISIBLE_ROWS do
+    local row = Roarboard.rows[i]
+    local post = posts[Roarboard.offset + i]
+    if post then
+      local preview = string.gsub(post.text or "", "^%s*(.-)%s*$", "%1")
+      if string.len(preview) > 42 then preview = string.sub(preview, 1, 39).."..." end
+      row.postID = post.postID
+      row:SetText((post.username or "?")..": "..preview)
+      row:Show()
+      if post.postID == Roarboard.selectedID then selected = post end
+    else
+      row.postID = nil
+      row:Hide()
+    end
+    i = i + 1
+  end
+
+  if not selected and posts[1] then
+    selected = posts[1]
+    Roarboard.selectedID = selected.postID
+  end
+  if selected then
+    Roarboard.title:SetText(selected.username or "Unknown")
+    Roarboard.body:SetText(selected.text or "")
+    Roarboard.date:SetText("Posted "..date("%Y-%m-%d %H:%M", tonumber(selected.timestamp) or 0))
+    Roarboard.count:SetText("Roars: "..tostring(tonumber(selected.roarcount) or 0))
+  else
+    Roarboard.title:SetText("No active posts")
+    Roarboard.body:SetText("Post with /roarboard <message> to start the board.")
+    Roarboard.date:SetText("")
+    Roarboard.count:SetText("")
+  end
+end
+
+local function RB_ApplyPost(post)
+  if type(post) ~= "table" or not post.postID or not post.username or not post.timestamp then return end
+  local rb = RB_EnsureDB()
+  local existing = rb.posts[post.postID]
+  if not existing then
+    rb.posts[post.postID] = post
+  else
+    existing.username = post.username
+    existing.timestamp = post.timestamp
+    existing.text = post.text
+    if (tonumber(post.roarcount) or 0) > (tonumber(existing.roarcount) or 0) then
+      existing.roarcount = tonumber(post.roarcount) or 0
+    end
+    if (tonumber(post.lastActivity) or 0) > (tonumber(existing.lastActivity) or 0) then
+      existing.lastActivity = tonumber(post.lastActivity) or 0
+    end
+  end
+  RB_Prune()
+  RB_RefreshUI()
+end
+
+local function RB_NewPost(text)
+  text = U.trim(text or "")
+  if text == "" then return false end
+  if string.len(text) > RB_MAX_TEXT then
+    roarChat("Roarboard posts are limited to "..tostring(RB_MAX_TEXT).." characters.")
+    return false
+  end
+  local username = UnitName("player") or "Unknown"
+  local stamp = RB_Now()
+  local post = {
+    postID = username.."-"..tostring(stamp).."-"..tostring(math.random(1000, 9999)),
+    username = username,
+    timestamp = stamp,
+    lastActivity = stamp,
+    roarcount = 0,
+    text = text,
+  }
+  local payload = RB_PREFIX.."|P|"..RB_Escape(post.postID).."|"..RB_Escape(username).."|"..tostring(stamp).."|"..tostring(stamp).."|0|"..RB_Escape(text)
+  if not RB_Send(payload) then return false end
+  RB_ApplyPost(post)
+  return true
+end
+
+local function RB_Roar(postID)
+  local post = RB_EnsureDB().posts[postID]
+  if not post then return end
+  local eventID = (UnitName("player") or "Unknown").."-"..tostring(RB_Now()).."-"..tostring(math.random(1000, 9999))
+  local stamp = RB_Now()
+  local payload = RB_PREFIX.."|R|"..RB_Escape(eventID).."|"..RB_Escape(postID).."|"..tostring(stamp).."|||"
+  if not RB_Send(payload) then return end
+  local rb = RB_EnsureDB()
+  rb.seen[eventID] = stamp
+  post.roarcount = (tonumber(post.roarcount) or 0) + 1
+  post.lastActivity = stamp
+  RB_RefreshUI()
+end
+
+local function RB_HandleMessage(msg)
+  if type(msg) ~= "string" or string.sub(msg, 1, string.len(RB_PREFIX) + 1) ~= RB_PREFIX.."|" then return end
+  local _, _, kind = string.find(msg, "^RB1|([^|]+)")
+  if kind == "P" then
+    local _, _, a, b, c, d, e, f = string.find(msg, "^RB1|P|([^|]*)|([^|]*)|([^|]*)|([^|]*)|([^|]*)|(.*)$")
+    if not a then return end
+    RB_ApplyPost({
+      postID = RB_Unescape(a), username = RB_Unescape(b), timestamp = tonumber(c) or 0,
+      lastActivity = tonumber(d) or tonumber(c) or 0, roarcount = tonumber(e) or 0, text = RB_Unescape(f),
+    })
+  elseif kind == "R" then
+    local _, _, a, b, c = string.find(msg, "^RB1|R|([^|]*)|([^|]*)|([^|]*)")
+    if not a then return end
+    local eventID, postID, stamp = RB_Unescape(a), RB_Unescape(b), tonumber(c) or RB_Now()
+    local rb = RB_EnsureDB()
+    if not rb.seen[eventID] then
+      rb.seen[eventID] = stamp
+      local post = rb.posts[postID]
+      if post then
+        post.roarcount = (tonumber(post.roarcount) or 0) + 1
+        post.lastActivity = stamp
+        RB_RefreshUI()
+      end
+    end
+  elseif kind == "S" then
+    local posts = RB_PostList()
+    local i = 1
+    while posts[i] do
+      local post = posts[i]
+      RB_Send(RB_PREFIX.."|P|"..RB_Escape(post.postID).."|"..RB_Escape(post.username).."|"..tostring(post.timestamp).."|"..tostring(post.lastActivity or post.timestamp).."|"..tostring(post.roarcount or 0).."|"..RB_Escape(post.text))
+      i = i + 1
+    end
+  end
+end
+
+local function RB_Show()
+  RB_Prune()
+  if not Roarboard.frame then
+    local frame = CreateFrame("Frame", "RoarboardFrame", UIParent)
+    frame:SetWidth(700)
+    frame:SetHeight(460)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    frame:SetFrameStrata("DIALOG")
+    frame:SetBackdrop({ bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=32, insets={left=11,right=11,top=11,bottom=11} })
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function() this:StartMoving() end)
+    frame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+    frame:Hide()
+    tinsert(UISpecialFrames, "RoarboardFrame")
+
+    local heading = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    heading:SetPoint("TOP", frame, "TOP", 0, -18)
+    heading:SetText("Roarboard")
+    local subheading = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    subheading:SetPoint("TOP", heading, "BOTTOM", 0, -3)
+    subheading:SetText("A shared board for the people of ROAR")
+
+    local divider = frame:CreateTexture(nil, "ARTWORK")
+    divider:SetTexture("Interface\\QuestFrame\\UI-QuestLog-QuestLogTab")
+    divider:SetWidth(2)
+    divider:SetHeight(365)
+    divider:SetPoint("LEFT", frame, "LEFT", 238, -10)
+
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+
+    Roarboard.rows = {}
+    local i = 1
+    while i <= RB_VISIBLE_ROWS do
+      local row = CreateFrame("Button", nil, frame)
+      row:SetWidth(210)
+      row:SetHeight(24)
+      row:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -65 - ((i - 1) * 27))
+      row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+      row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+      row.text:SetPoint("LEFT", row, "LEFT", 3, 0)
+      row.text:SetJustifyH("LEFT")
+      row:SetFontString(row.text)
+      row:SetScript("OnClick", function()
+        Roarboard.selectedID = this.postID
+        RB_RefreshUI()
+      end)
+      Roarboard.rows[i] = row
+      i = i + 1
+    end
+
+    local up = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    up:SetWidth(90); up:SetHeight(22); up:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 20, 22); up:SetText("Newer")
+    up:SetScript("OnClick", function() Roarboard.offset = Roarboard.offset - RB_VISIBLE_ROWS; RB_RefreshUI() end)
+    local down = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    down:SetWidth(90); down:SetHeight(22); down:SetPoint("LEFT", up, "RIGHT", 8, 0); down:SetText("Older")
+    down:SetScript("OnClick", function() Roarboard.offset = Roarboard.offset + RB_VISIBLE_ROWS; RB_RefreshUI() end)
+
+    Roarboard.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    Roarboard.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 265, -65)
+    Roarboard.date = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    Roarboard.date:SetPoint("TOPLEFT", Roarboard.title, "BOTTOMLEFT", 0, -5)
+    Roarboard.count = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    Roarboard.count:SetPoint("TOPLEFT", Roarboard.date, "BOTTOMLEFT", 0, -3)
+    Roarboard.body = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    Roarboard.body:SetPoint("TOPLEFT", frame, "TOPLEFT", 265, -130)
+    Roarboard.body:SetPoint("RIGHT", frame, "RIGHT", -35, 0)
+    Roarboard.body:SetJustifyH("LEFT")
+    Roarboard.body:SetJustifyV("TOP")
+
+    local roar = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    roar:SetWidth(110); roar:SetHeight(26); roar:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 265, 24); roar:SetText("Roar")
+    roar:SetScript("OnClick", function() if Roarboard.selectedID then RB_Roar(Roarboard.selectedID) end end)
+    Roarboard.frame = frame
+  end
+  Roarboard.frame:Show()
+  RB_RefreshUI()
 end
 
 
@@ -918,11 +1212,33 @@ return
 end
 
 -------------------------------------------------
+-- [4.9] Roarboard commands
+-------------------------------------------------
+SLASH_ROARBOARD1 = "/roarboard"
+SlashCmdList["ROARBOARD"] = function(raw)
+  ROGU_LoadOnce()
+  RB_EnsureDB()
+  raw = U.trim(raw or "")
+  if raw == "" then
+    RB_Show()
+    return
+  end
+  if U.upper(raw) == "SYNC" then
+    if RB_Send(RB_PREFIX.."|S|0||||") then
+      roarChat("Roarboard sync requested.")
+    end
+    return
+  end
+  RB_NewPost(raw)
+end
+
+-------------------------------------------------
 -- [5] Init / Save
 -------------------------------------------------
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("PLAYER_LOGOUT")
+f:RegisterEvent("CHAT_MSG_CHANNEL")
 
 f:SetScript("OnEvent", function(_, event)
   if event == "PLAYER_LOGIN" then
@@ -947,8 +1263,18 @@ f:SetScript("OnEvent", function(_, event)
     ROGU.lastReminder = 0
 
     ROGU_SyncToProfile()
+    RB_EnsureDB()
+    RB_Prune()
+    RB_JoinChannel()
 
   elseif event == "PLAYER_LOGOUT" then
     ROGU_SyncToProfile()
+
+  elseif event == "CHAT_MSG_CHANNEL" then
+    local channel = string.lower(tostring(arg9 or ""))
+    local display = string.lower(tostring(arg8 or ""))
+    if channel == RB_CHANNEL or string.find(display, RB_CHANNEL, 1, true) then
+      RB_HandleMessage(arg1)
+    end
   end
 end)
