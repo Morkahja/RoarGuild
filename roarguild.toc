@@ -1,7 +1,7 @@
 ## Interface: 11200
 ## Title: RoarGuild
-## Notes: Triggers battle emotes when you press specific action bar slots. Supports multiple per-character profiles and per-slot cooldown/chance.
-## Version: 1.32
+## Notes: Battle-emote triggers, guild recruitment messages, and the shared Roarboard message board.
+## Version: 1.33
 ## SavedVariables: ROGUDB
 
 roarguild.lua
