@@ -2,7 +2,7 @@
 
 **Version:** 1.32
 **Author:** babunigaming
-**Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
+**Environment:** Vanilla WoW 1.12 (Lua 5.0)
 
 RoarGuild adds a small chance for your character to /roar when pressing actionslots, with the option to fully customize every actionslot with it's own chance, timer and list of emotes. 
 
