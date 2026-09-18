@@ -2,7 +2,7 @@
 
 **Version:** 1.32
 **Author:** babunigaming
-**Environment:** Vanilla / Turtle WoW 1.12 (Lua 5.0)
+**Environment:** Vanilla WoW 1.12 (Lua 5.0)
 
 RoarGuild adds a small, automatic chance for your character to express themselves through emotes during normal play, with optional systems that expand this into a fully configurable expression addon.
 
