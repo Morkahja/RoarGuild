@@ -1,5 +1,5 @@
 -- RoarGuild v1.33
--- Vanilla / Turtle WoW 1.12
+-- Vanilla WoW 1.12
 -- Lua 5.0-safe
 -- SavedVariables: ROGUDB
 
